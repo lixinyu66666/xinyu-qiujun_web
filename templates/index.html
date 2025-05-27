@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>李新宇 ❤️ 孟秋君</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>李新宇 & 孟秋君</h1>
+        <div class="love-container">
+            <div class="heart"></div>
+        </div>
+        <div class="days-counter">
+            <h2>我们已经相恋了</h2>
+            <div class="days">{{ days_together }}</div>
+            <h2>天</h2>
+        </div>
+        
+        <div class="image-slider">
+            <div class="slider-container">
+                {% for image in images %}
+                <div class="slide">
+                    <img src="{{ url_for('static', filename='images/' + image) }}" alt="我们的照片">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 
