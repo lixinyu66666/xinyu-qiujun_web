@@ -1,12 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import datetime
 import os
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # 用于会话加密
+app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))  # 用于会话加密
 
-# 设置密码
-PASSWORD = "620725"
+# 设置密码（从环境变量读取，如果没有则使用默认值）
+PASSWORD = os.getenv('PASSWORD', "620725")
 
 # 设置恋爱纪念日期
 LOVE_START_DATE = datetime(2022, 12, 9)  # 请根据实际日期调整
@@ -46,6 +50,9 @@ def home():
     return render_template('index.html', 
                          days_together=days_together,
                          images=images)
+
+# Vercel需要的应用实例
+application = app
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True) 
