@@ -36,32 +36,32 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(to right, 
-                rgba(0, 0, 0, 0.5), 
-                rgba(0, 0, 0, 0.3));
+    background: linear-gradient(to right,
+                 rgba(0, 0, 0, 0.5),
+                 rgba(0, 0, 0, 0.3));
     z-index: -1;
     animation: gradientShift 30s infinite alternate;
 }
 
 @keyframes gradientShift {
     0% {
-        background: linear-gradient(to right, 
-                    rgba(0, 0, 0, 0.5), 
-                    rgba(0, 0, 0, 0.3));
+        background: linear-gradient(to right,
+                     rgba(0, 0, 0, 0.5),
+                     rgba(0, 0, 0, 0.3));
     }
     33% {
-        background: linear-gradient(to right, 
-                    rgba(66, 39, 90, 0.5),
+        background: linear-gradient(to right,
+                     rgba(66, 39, 90, 0.5),
                     rgba(115, 75, 109, 0.3));
     }
     66% {
-        background: linear-gradient(to right, 
-                    rgba(35, 61, 77, 0.5),
+        background: linear-gradient(to right,
+                     rgba(35, 61, 77, 0.5),
                     rgba(80, 95, 107, 0.3));
     }
     100% {
-        background: linear-gradient(to right, 
-                    rgba(121, 33, 33, 0.5),
+        background: linear-gradient(to right,
+                     rgba(121, 33, 33, 0.5),
                     rgba(121, 72, 72, 0.3));
     }
 }
@@ -186,8 +186,7 @@ header h1::after {
     animation: heartbeat 1.5s ease-in-out infinite;
 }
 
-.heart::before,
-.heart::after {
+.heart::before, .heart::after {
     content: '';
     position: absolute;
     width: 52px;
@@ -437,7 +436,7 @@ footer {
     opacity: 0.7;
 }
 
-/* Fullscreen modal */
+/* Modal fullscreen styles */
 .fullscreen-overlay {
     position: fixed;
     top: 0;
@@ -485,13 +484,14 @@ footer {
     transform: scale(1.2);
 }
 
-/* Journal styles */
+/* Journal section styles */
 .journal-section {
     padding: 2rem 0;
     max-width: 900px;
     margin: 0 auto;
 }
 
+/* Journal control buttons styles */
 .journal-controls {
     display: flex;
     flex-wrap: wrap;
@@ -587,7 +587,7 @@ footer {
     border-radius: 8px;
     cursor: pointer;
     font-size: 1rem;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
 }
 
 .submit-btn {
@@ -629,44 +629,7 @@ footer {
     margin-bottom: 1rem;
 }
 
-.entry-actions {
-    margin-top: 1.5rem;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.read-more-btn {
-    display: inline-flex;
-    align-items: center;
-    background-color: var(--primary-color);
-    color: white;
-    border-radius: 25px;
-    padding: 0.7rem 1.5rem;
-    font-size: 1rem;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-}
-
-.read-more-btn:hover {
-    background-color: #ff5252;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
-}
-
-.read-more-btn span {
-    margin-right: 0.5rem;
-}
-
-.read-more-btn i {
-    transition: transform 0.2s ease;
-}
-
-.read-more-btn:hover i {
-    transform: translateX(4px);
-}
-
-/* 日志详情页面的操作按钮样式 */
+/* Entry action buttons styles for detail page */
 .entry-actions {
     display: flex;
     justify-content: flex-end;
@@ -787,7 +750,7 @@ footer {
     margin-bottom: 1rem;
 }
 
-/* 搜索部分样式 */
+/* Search section styles */
 .search-section {
     margin-top: 1rem;
     text-align: center;
@@ -817,16 +780,7 @@ footer {
     color: rgba(255, 255, 255, 0.7);
 }
 
-.search-btn {
-    background: none;
-    border: none;
-    color: white;
-    padding: 0.5rem;
-    cursor: pointer;
-    font-size: 1.1rem;
-}
-
-/* 优化的日志表单样式 */
+/* Enhanced journal form styles */
 .journal-form {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 15px;
@@ -849,8 +803,7 @@ footer {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.journal-form input[type="text"],
-.journal-form textarea {
+.journal-form input[type="text"], .journal-form textarea {
     width: 100%;
     padding: 1rem 1.2rem;
     border: 2px solid rgba(255, 255, 255, 0.2);
@@ -862,8 +815,7 @@ footer {
     transition: all 0.3s ease;
 }
 
-.journal-form input[type="text"]:focus,
-.journal-form textarea:focus {
+.journal-form input[type="text"]:focus, .journal-form textarea:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 15px rgba(255, 107, 107, 0.3);
@@ -880,7 +832,7 @@ footer {
     font-family: 'Arial', sans-serif;
 }
 
-/* 改进日志内容显示样式 */
+/* Improved journal entry content display */
 .entry-content {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
@@ -911,9 +863,7 @@ footer {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-
-
-/* 闪现消息样式 */
+/* Flash message styles */
 .flash-messages {
     margin-bottom: 1.5rem;
     width: 100%;
@@ -929,7 +879,7 @@ footer {
     animation: fadeIn 0.3s ease-in-out;
 }
 
-/* 上传提示样式 */
+/* Upload notice styles */
 .upload-note {
     font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.8);
@@ -937,36 +887,36 @@ footer {
     font-style: italic;
 }
 
-/* 响应式调整 */
+/* Responsive adjustments */
 @media (max-width: 768px) {
     .container {
         padding: 1.5rem;
     }
-    
+
     header h1 {
         font-size: 2rem;
     }
-    
+
     .dashboard {
         flex-direction: column;
     }
-    
+
     .slide {
         height: 400px;
     }
-    
+
     .days {
         font-size: 3rem;
     }
-    
+
     .search-input {
         width: 200px;
     }
-    
+
     .journal-section {
         padding: 1rem;
     }
-    
+
     .entry-form, .edit-form {
         padding: 1rem;
     }

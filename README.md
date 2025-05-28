@@ -1,69 +1,70 @@
 # Xinyu & Qiujun - Love Anniversary Website
 
-A Flask-based personal love anniversary website to record beautiful moments together. Updated on 2025-05-28.
+A Flask-based personal love anniversary website to record beautiful moments together. Updated on May 28, 2025.
 
 ## Features
 
-- Track days since the beginning (December 10, 2022)
-- 100-day milestone celebrations
-- Beautiful photo gallery with fullscreen view
-- Journal system to record memories
-- Password protection
+* Track days since the beginning (December 10, 2022)
+* 100-day milestone celebrations
+* Beautiful photo gallery with fullscreen view
+* Journal system to record memories
+* Password protection
 
-## 重要提示: Vercel 部署问题解决方案
+## Important Note: Vercel Deployment Issue Workaround
 
-在 Vercel 上添加日志报错的解决方案:
+### Root Cause
 
-### 问题原因
+Vercel is a **stateless service platform** that does not allow server-side persistent file writes. When you try to add logs, the server attempts to write to the `journal.json` file, which is not permitted in the Vercel environment, resulting in a 500 Internal Server Error.
 
-Vercel 是一个**无状态服务平台**，它不允许服务端持久化写入文件系统。当您尝试添加日志时，服务器试图将内容写入到 journal.json 文件，但在 Vercel 环境中这种操作是不允许的，因此导致了 500 内部服务器错误。
+### Solution: Use MongoDB Database
 
-### 解决方案: 使用 MongoDB 数据库
+The application has been updated to support MongoDB. You can set it up as follows:
 
-应用已更新为支持 MongoDB，可以按以下步骤设置：
-
-1. 注册并登录 [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-2. 创建一个免费层级的数据库集群
-3. 在安全设置中，添加用户名和密码
-4. 在网络访问设置中，允许从任何地址访问 (添加 0.0.0.0/0)
-5. 获取连接字符串，格式类似: `mongodb+srv://username:password@cluster.mongodb.net/mydb?retryWrites=true&w=majority`
+1. Sign up and log in to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
+2. Create a free-tier database cluster.
+3. In the Security settings, add a username and password.
+4. In Network Access, allow access from any address (add `0.0.0.0/0`).
+5. Obtain the connection string, formatted like:
+   ```
+   mongodb+srv://username:password@cluster.mongodb.net/mydb?retryWrites=true&w=majority
+   ```
 
 ## Deploying to Vercel
 
-1. Push code to GitHub repository
-2. Connect GitHub repository in Vercel
-3. Configure custom domain xinyu-qiujun.fun
-4. Set up environment variables (see below)
+1. Push code to your GitHub repository.
+2. Connect the GitHub repository in Vercel.
+3. Configure the custom domain `xinyu-qiujun.fun`.
+4. Set up environment variables (see below).
 
 ## Environment Variables
 
-在 Vercel 项目设置中添加以下环境变量:
+In your Vercel project settings, add the following environment variables:
 
-- `PASSWORD`: 网站访问密码
-- `SECRET_KEY`: Flask 会话密钥
-- `MONGODB_URI`: MongoDB Atlas 连接字符串
-- `MONGODB_DB`: 数据库名称 (例如: `journal_db`)
-- `VERCEL`: 设置为 `1`
+* `PASSWORD`: The password for accessing the site.
+* `SECRET_KEY`: Flask session secret key.
+* `MONGODB_URI`: MongoDB Atlas connection string.
+* `MONGODB_DB`: Database name (e.g., `journal_db`).
+* `VERCEL`: Set to `1`.
 
 ## Local Development
 
 1. Install dependencies: `pip install -r requirements.txt`
-2. Create `.env` file and set environment variables:
+2. Create a `.env` file and set environment variables:
    ```
    SECRET_KEY=your_random_secret_key
    PASSWORD=your_password
-   # 如果本地使用 MongoDB (可选)
+   # Optional: if using MongoDB locally
    # MONGODB_URI=your_mongodb_connection_string
    # MONGODB_DB=journal_db
    ```
 3. Run: `python app.py`
-4. 访问 http://localhost:8080
+4. Open [http://localhost:8080](http://localhost:8080/) in your browser.
 
-## 故障排除
+## Troubleshooting
 
-如果在 Vercel 上仍然遇到错误:
+If you still encounter errors on Vercel:
 
-1. 检查 Vercel 部署日志
-2. 确认 MongoDB 连接字符串正确
-3. 确认所有环境变量都已正确设置
-4. 重新从 GitHub 部署项目
+1. Check the Vercel deployment logs.
+2. Verify that the MongoDB connection string is correct.
+3. Confirm that all environment variables are set correctly.
+4. Redeploy the project from GitHub.
