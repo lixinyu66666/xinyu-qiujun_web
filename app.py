@@ -57,17 +57,39 @@ COLLECTION_NAME = 'entries'
 
 # 初始化 MongoDB 客户端
 mongo_client = None
-try:
-    if MONGODB_URI:
-        mongo_client = pymongo.MongoClient(MONGODB_URI)
-        db = mongo_client[DB_NAME]
-        collection = db[COLLECTION_NAME]
-        app.logger.info("MongoDB 连接成功")
-    else:
-        app.logger.warning("未配置MongoDB URI，将使用本地文件存储")
-except Exception as e:
-    app.logger.error(f"MongoDB 连接错误: {e}")
-    mongo_client = None
+db = None
+collection = None
+
+def init_mongodb_connection():
+    global mongo_client, db, collection
+    try:
+        if MONGODB_URI:
+            # 设置更短的连接超时时间，避免长时间等待
+            mongo_client = pymongo.MongoClient(
+                MONGODB_URI, 
+                serverSelectionTimeoutMS=5000,  # 5秒超时
+                connectTimeoutMS=5000,
+                socketTimeoutMS=5000
+            )
+            # 验证连接是否成功
+            mongo_client.server_info()  # 如果连接失败，这里会抛出异常
+            
+            db = mongo_client[DB_NAME]
+            collection = db[COLLECTION_NAME]
+            app.logger.info("MongoDB 连接成功")
+            return True
+        else:
+            app.logger.warning("未配置MongoDB URI，将使用本地文件存储")
+            return False
+    except Exception as e:
+        app.logger.error(f"MongoDB 连接错误: {e}")
+        mongo_client = None
+        db = None
+        collection = None
+        return False
+
+# 尝试初始化MongoDB连接
+init_mongodb_connection()
 
 # 日志文件路径 - 在没有MongoDB或本地开发环境时使用
 JOURNAL_FILE = os.path.join(os.path.dirname(__file__), 'data/journal.json')
@@ -121,12 +143,15 @@ def save_journal(entries):
     try:
         # 如果 MongoDB 可用，保存到数据库
         if mongo_client:
-            # 清空现有数据
-            collection.delete_many({})
-            # 插入所有条目
-            if entries:
-                collection.insert_many(entries)
-            app.logger.info(f"成功保存 {len(entries)} 条日志到MongoDB")
+            # 使用更安全的方法：对于每个条目，使用upsert操作
+            # 这样如果操作失败，不会丢失所有数据
+            for entry in entries:
+                # 使用id作为唯一标识
+                query = {'id': entry['id']}
+                # 使用upsert=True，存在则更新，不存在则插入
+                collection.update_one(query, {'$set': entry}, upsert=True)
+                
+            app.logger.info(f"成功保存/更新 {len(entries)} 条日志到MongoDB")
             return True
         
         # 否则保存到本地文件
@@ -272,26 +297,36 @@ def add_entry():
             'timestamp': now.timestamp()
         }
         
-        # 如果直接使用MongoDB，可以单独添加条目
+        success = False
+        
+        # 如果MongoDB可用，尝试添加
         if mongo_client:
             try:
-                collection.insert_one(entry)
-                app.logger.info(f"日志已直接添加到MongoDB: {entry_id}")
-                flash('日志添加成功')
-                return redirect(url_for('journal'))
+                # 直接插入
+                result = collection.insert_one(entry)
+                if result.inserted_id:
+                    app.logger.info(f"日志已成功添加到MongoDB: {entry_id}")
+                    success = True
+                else:
+                    app.logger.warning(f"MongoDB插入日志没有返回ID: {entry_id}")
             except Exception as mongo_err:
                 app.logger.error(f"MongoDB添加日志失败: {mongo_err}")
-                # 如果MongoDB失败，回退到文件存储
+                # MongoDB失败，将尝试文件存储
         
-        # 使用文件存储
-        entries = load_journal()
-        entries.append(entry)
-        if save_journal(entries):
+        # 如果MongoDB不可用或添加失败，使用文件存储
+        if not success:
+            entries = load_journal()
+            entries.append(entry)
+            success = save_journal(entries)
+            if success:
+                app.logger.info(f"日志已添加到文件存储: {entry_id}")
+            else:
+                app.logger.error(f"文件存储保存日志失败: {entry_id}")
+        
+        if success:
             flash('日志添加成功')
-            app.logger.info(f"日志已添加到文件存储: {entry_id}")
         else:
             flash('保存日志时出错，请稍后重试')
-            app.logger.error("文件存储保存日志失败")
             
         return redirect(url_for('journal'))
     except Exception as e:
@@ -370,35 +405,44 @@ def delete_entry():
     
     try:
         app.logger.info(f"尝试删除日志: {entry_id}")
+        success = False
         
-        # 如果MongoDB可用，直接从数据库删除
+        # 如果MongoDB可用，尝试从数据库删除
         if mongo_client:
-            result = collection.delete_one({'id': entry_id})
-            if result.deleted_count > 0:
-                app.logger.info(f"日志已从MongoDB中删除: {entry_id}")
-                flash('日志已删除')
+            try:
+                result = collection.delete_one({'id': entry_id})
+                if result.deleted_count > 0:
+                    app.logger.info(f"日志已从MongoDB中删除: {entry_id}")
+                    success = True
+                else:
+                    app.logger.warning(f"MongoDB中未找到要删除的日志: {entry_id}")
+                    # MongoDB中没有找到，将尝试文件存储
+            except Exception as mongo_err:
+                app.logger.error(f"MongoDB删除日志失败: {mongo_err}")
+                # MongoDB操作失败，将尝试文件存储
+        
+        # 如果MongoDB不可用或删除失败，使用文件存储
+        if not success:
+            entries = load_journal()
+            original_count = len(entries)
+            entries = [entry for entry in entries if entry['id'] != entry_id]
+            
+            if len(entries) == original_count:
+                # 没有删除任何条目
+                flash('找不到要删除的日志')
+                app.logger.warning(f"在文件存储中未找到要删除的日志: {entry_id}")
                 return redirect(url_for('journal'))
+            
+            if save_journal(entries):
+                app.logger.info(f"日志已从文件存储中删除: {entry_id}")
+                success = True
             else:
-                app.logger.warning(f"MongoDB中未找到要删除的日志: {entry_id}")
-                # 如果MongoDB中没有找到，回退到文件存储
-                
-        # 使用文件存储
-        entries = load_journal()
-        original_count = len(entries)
-        entries = [entry for entry in entries if entry['id'] != entry_id]
+                app.logger.error(f"从文件存储删除日志失败: {entry_id}")
         
-        if len(entries) == original_count:
-            # 没有删除任何条目
-            flash('找不到要删除的日志')
-            app.logger.warning(f"在文件存储中未找到要删除的日志: {entry_id}")
-            return redirect(url_for('journal'))
-        
-        if save_journal(entries):
+        if success:
             flash('日志已删除')
-            app.logger.info(f"日志已从文件存储中删除: {entry_id}")
         else:
             flash('删除日志时出错，请稍后重试')
-            app.logger.error(f"从文件存储删除日志失败: {entry_id}")
             
         return redirect(url_for('journal'))
     except Exception as e:
@@ -504,6 +548,22 @@ def view_entry(id):
     
     flash('找不到指定的日志')
     return redirect(url_for('journal'))
+
+# 添加一个简单的日志状态API，方便调试
+@app.route('/api/status', methods=['GET'])
+def api_status():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    
+    status = {
+        'mongodb_connected': mongo_client is not None,
+        'entries_count': len(load_journal()),
+        'vercel': IS_VERCEL,
+        'mongodb_uri_configured': MONGODB_URI is not None,
+        'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+    
+    return status
 
 # Application instance for Vercel
 application = app
