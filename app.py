@@ -12,8 +12,8 @@ app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))  # For session encrypti
 # Set password from environment variable
 PASSWORD = os.getenv('PASSWORD') 
 if not PASSWORD:
-    print("警告: 未设置密码环境变量，请确保设置了 PASSWORD 环境变量")
-    PASSWORD = "请在.env文件中设置密码"  # 这只是一个占位符
+    print("WARNING: Password environment variable not set. Please ensure the PASSWORD environment variable is configured.")
+    PASSWORD = "Please set password in .env file"  # This is just a placeholder
 
 # Set relationship anniversary date
 LOVE_START_DATE = datetime(2022, 12, 10)  # Changed to December 10th
@@ -30,24 +30,24 @@ def get_image_files():
     return sorted(images)  # Sort by filename
 
 def get_next_milestone(start_date, today):
-    # 计算已经开始的天数（这里使用实际天数，不加1）
+    # Calculate days together (using actual days, without adding 1)
     days_together = (today - start_date).days
     
-    # 计算已经过了几个100天
+    # Calculate how many 100-day periods have passed
     hundreds_passed = days_together // 100
     
-    # 计算下一个100天纪念日的日期
+    # Calculate the date of the next 100-day milestone
     next_milestone = start_date + timedelta(days=(hundreds_passed + 1) * 100)
     
-    # 计算距离下一个纪念日的天数
+    # Calculate days until the next milestone
     days_to_milestone = (next_milestone - today).days
     
-    # 格式化纪念日文本
+    # Format milestone text
     if hundreds_passed == 0:
-        # 还不到100天
+        # Less than 100 days
         milestone_text = f"100天纪念日 ({next_milestone.strftime('%Y年%m月%d日')})"
     else:
-        # 已经过了至少100天
+        # At least 100 days have passed
         next_hundred = hundreds_passed + 1
         milestone_text = f"{next_hundred * 100}天纪念日 ({next_milestone.strftime('%Y年%m月%d日')})"
     
