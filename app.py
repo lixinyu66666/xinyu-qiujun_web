@@ -9,8 +9,11 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))  # For session encryption
 
-# Set password (from environment variable or default value)
-PASSWORD = os.getenv('PASSWORD', "620725")
+# Set password from environment variable
+PASSWORD = os.getenv('PASSWORD') 
+if not PASSWORD:
+    print("警告: 未设置密码环境变量，请确保设置了 PASSWORD 环境变量")
+    PASSWORD = "请在.env文件中设置密码"  # 这只是一个占位符
 
 # Set relationship anniversary date
 LOVE_START_DATE = datetime(2022, 12, 10)  # Changed to December 10th

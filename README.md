@@ -1,6 +1,13 @@
 # Xinyu & Qiujun - Love Anniversary Website
 
-A Flask-based personal love anniversary website to record beautiful moments together.
+A Flask-based personal love anniversary website to record beautiful moments together. Updated on 2025-05-28.
+
+## Features
+
+- Track days since the beginning (December 10, 2022)
+- 100-day milestone celebrations
+- Beautiful photo gallery with fullscreen view
+- Password protection
 
 ## Deploying to Vercel
 
