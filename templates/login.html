@@ -7,19 +7,31 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            background: url('../static/images/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             margin: 0;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
         .login-container {
-            background: rgba(255, 255, 255, 0.9);
+            background-color: rgba(0, 0, 0, 0.6);
             padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             text-align: center;
+            color: white;
         }
         input[type="password"] {
             padding: 10px;
@@ -27,6 +39,8 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             width: 200px;
+            background: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
         }
         button {
             background: #ff1493;
@@ -36,13 +50,15 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
         button:hover {
             background: #ff69b4;
         }
         .error {
-            color: red;
+            color: #ffaaaa;
             margin-top: 10px;
+            font-weight: bold;
         }
     </style>
 </head>

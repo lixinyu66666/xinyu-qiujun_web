@@ -4,30 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>李新宇 ❤️ 孟秋君</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <div class="background-overlay"></div>
+    
     <div class="container">
-        <h1>李新宇 & 孟秋君</h1>
-        <div class="love-container">
-            <div class="heart"></div>
-        </div>
-        <div class="days-counter">
-            <h2>我们已经相恋了</h2>
-            <div class="days">{{ days_together }}</div>
-            <h2>天</h2>
-        </div>
+        <header>
+            <h1>李新宇 <span class="heart-symbol">❤️</span> 孟秋君</h1>
+        </header>
         
-        <div class="image-slider">
-            <div class="slider-container">
-                {% for image in images %}
-                <div class="slide">
-                    <img src="{{ url_for('static', filename='images/' + image) }}" alt="我们的照片">
+        <div class="dashboard">
+            <div class="love-container">
+                <div class="heart"></div>
+                <div class="days-counter">
+                    <h2>我们已经开始了</h2>
+                    <div class="days">{{ days_together }}</div>
+                    <h2>天</h2>
                 </div>
-                {% endfor %}
+            </div>
+            
+            <div class="special-dates">
+                <h2>我们的纪念日</h2>
+                <div class="date-item">
+                    <i class="fas fa-heart"></i>
+                    <span>开始：2022年12月10日</span>
+                </div>
+                <div class="date-item">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>今天：{{ today_date }}</span>
+                </div>
+                <div class="date-item upcoming">
+                    <i class="fas fa-gift"></i>
+                    <span>下一个纪念日：{{ next_milestone }}</span>
+                    <span class="days-left">(还有 {{ days_to_milestone }} 天)</span>
+                </div>
             </div>
         </div>
+        
+        <div class="gallery-section">
+            <h2>我们的回忆</h2>
+            <div class="image-slider">
+                <div class="slider-container">
+                    {% for image in images %}
+                    <div class="slide">
+                        <div class="img-container" data-image="{{ url_for('static', filename='images/' + image) }}">
+                            <img src="{{ url_for('static', filename='images/' + image) }}" alt="我们的照片">
+                            <div class="hover-overlay">
+                                <i class="fas fa-expand-arrows-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="slider-controls">
+                    <button class="control-btn prev-btn"><i class="fas fa-chevron-left"></i></button>
+                    <div class="slide-indicator">
+                        <span class="current-slide">1</span>/<span class="total-slides">{{ images|length }}</span>
+                    </div>
+                    <button class="control-btn next-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>用❤️搭建 | {{ current_year }}</p>
+        </footer>
     </div>
+    
+    <div class="fullscreen-overlay">
+        <div class="fullscreen-content">
+            <img src="" alt="全屏照片">
+            <button class="close-fullscreen"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+    
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html> 
