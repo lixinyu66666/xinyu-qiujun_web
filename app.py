@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 import imghdr
 import pymongo
 import sys
+import pytz
+
+# 定义中国时区常量
+CHINA_TIMEZONE = pytz.timezone('Asia/Shanghai')
 
 # Load environment variables
 load_dotenv()
@@ -45,7 +49,7 @@ if not PASSWORD:
     PASSWORD = "Please set password in .env file"  # This is just a placeholder
 
 # Set relationship anniversary date
-LOVE_START_DATE = datetime(2022, 12, 10)  # Changed to December 10th
+LOVE_START_DATE = datetime(2022, 12, 10, tzinfo=pytz.timezone('Asia/Shanghai'))  # 使用中国时区
 
 # 判断是否在Vercel环境中运行
 IS_VERCEL = os.environ.get('VERCEL') == '1'
@@ -56,7 +60,6 @@ DB_NAME = os.getenv('MONGODB_DB', 'journal_db')
 COLLECTION_NAME = 'entries'
 
 # 初始化 MongoDB 客户端
-#
 mongo_client = None
 db = None
 collection = None
@@ -243,7 +246,7 @@ def home():
         return redirect(url_for('login'))
         
     # Calculate days in relationship
-    today = datetime.now()
+    today = datetime.now(CHINA_TIMEZONE)
     days_together = (today - LOVE_START_DATE).days + 1  # Adding 1 day to make it 901 days
     
     # Format today's date
@@ -265,7 +268,7 @@ def gallery():
         return redirect(url_for('login'))
     
     images = get_image_files()
-    today = datetime.now()
+    today = datetime.now(CHINA_TIMEZONE)
     
     return render_template('gallery.html',
                          images=images,
@@ -285,7 +288,7 @@ def journal():
     else:  # 默认为newest
         entries.sort(key=lambda x: x['timestamp'], reverse=True)
     
-    today = datetime.now()
+    today = datetime.now(CHINA_TIMEZONE)
     
     return render_template('journal.html',
                          entries=entries,
@@ -297,7 +300,7 @@ def add_entry():
         return redirect(url_for('login'))
 
     if request.method == 'GET':
-        today = datetime.now()
+        today = datetime.now(CHINA_TIMEZONE)
         return render_template('add_entry.html', current_year=today.year)
         
     # POST request handling
@@ -312,7 +315,7 @@ def add_entry():
         
         app.logger.info(f"尝试添加日志: {title} by {author}")
         
-        now = datetime.now()
+        now = datetime.now(CHINA_TIMEZONE)
         entry_id = str(int(now.timestamp()))
         entry = {
             'id': entry_id,
@@ -375,7 +378,7 @@ def edit(id):
     entries = load_journal()
     for entry in entries:
         if entry['id'] == id:
-            today = datetime.now()
+            today = datetime.now(CHINA_TIMEZONE)
             return render_template('edit_entry.html', 
                                 entry=entry,
                                 current_year=today.year)
@@ -405,7 +408,7 @@ def update_entry(id):
                 entry['title'] = title
                 entry['content'] = content
                 entry['author'] = author
-                now = datetime.now()
+                now = datetime.now(CHINA_TIMEZONE)
                 entry['date'] = now.strftime('%Y年%m月%d日')
                 entry['time'] = now.strftime('%H:%M:%S')
                 entry['timestamp'] = now.timestamp()
@@ -588,7 +591,7 @@ def view_entry(id):
     entries = load_journal()
     for entry in entries:
         if entry['id'] == id:
-            today = datetime.now()
+            today = datetime.now(CHINA_TIMEZONE)
             return render_template('view_entry.html', 
                                 entry=entry,
                                 current_year=today.year)
@@ -607,7 +610,7 @@ def api_status():
         'entries_count': len(load_journal()),
         'vercel': IS_VERCEL,
         'mongodb_uri_configured': MONGODB_URI is not None,
-        'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        'time': datetime.now(CHINA_TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')
     }
     
     return status
