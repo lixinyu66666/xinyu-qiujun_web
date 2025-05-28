@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const slides = document.querySelectorAll('.slide');
     let currentSlide = 0;
     
-    // 设置轮播间隔（3秒）
+    // Carousel interval (3 seconds)
     const INTERVAL = 3000;
     
     function nextSlide() {
@@ -15,9 +15,9 @@ document.addEventListener('DOMContentLoaded', function() {
         sliderContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
     }
     
-    // 自动轮播
+    // Auto carousel
     setInterval(nextSlide, INTERVAL);
     
-    // 初始化显示
+    // Initialize display
     updateSlider();
 }); 

@@ -1,23 +1,23 @@
-# 新宇秋君 - 恋爱纪念网站
+# Xinyu & Qiujun - Love Anniversary Website
 
-这是一个基于Flask的个人恋爱纪念网站，用于记录美好的时光。
+A Flask-based personal love anniversary website to record beautiful moments together.
 
-## 部署到Vercel
+## Deploying to Vercel
 
-1. 将代码推送到GitHub仓库
-2. 在Vercel中连接GitHub仓库
-3. 配置自定义域名 xinyu-qiujun.fun
-4. 设置环境变量
+1. Push code to GitHub repository
+2. Connect GitHub repository in Vercel
+3. Configure custom domain xinyu-qiujun.fun
+4. Set up environment variables
 
-## 环境变量设置
+## Environment Variables
 
-在Vercel项目设置中添加以下环境变量：
+Add the following environment variables in Vercel project settings:
 
-- `PASSWORD`: 网站访问密码
-- `SECRET_KEY`: Flask会话密钥
+- `PASSWORD`: Website access password
+- `SECRET_KEY`: Flask session key
 
-## 本地开发
+## Local Development
 
-1. 安装依赖：`pip install -r requirements.txt`
-2. 创建 `.env` 文件并设置环境变量
-3. 运行：`python app.py`
+1. Install dependencies: `pip install -r requirements.txt`
+2. Create `.env` file and set environment variables
+3. Run: `python app.py`
