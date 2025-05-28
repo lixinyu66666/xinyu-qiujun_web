@@ -18,6 +18,16 @@
                 <a href="{{ url_for('gallery') }}" class="nav-btn"><i class="fas fa-images"></i> 相册</a>
             </div>
         </header>
+        
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for message in messages %}
+                <div class="flash-message">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
 
         <div class="journal-section">
             <div class="journal-controls">

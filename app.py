@@ -4,12 +4,39 @@ import os
 import json
 from dotenv import load_dotenv
 import imghdr
+import pymongo
+import sys
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))  # For session encryption
+
+# 设置日志
+import logging
+from logging.handlers import RotatingFileHandler
+
+# 确保日志目录存在
+log_dir = os.path.join(os.path.dirname(__file__), 'logs')
+if not os.path.exists(log_dir):
+    try:
+        os.makedirs(log_dir)
+    except Exception as e:
+        print(f"无法创建日志目录: {e}")
+
+# 配置日志处理器
+try:
+    handler = RotatingFileHandler(os.path.join(log_dir, 'app.log'), maxBytes=10240, backupCount=5)
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    handler.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('应用启动')
+except Exception as e:
+    print(f"无法配置日志: {e}")
 
 # Set password from environment variable
 PASSWORD = os.getenv('PASSWORD') 
@@ -20,8 +47,33 @@ if not PASSWORD:
 # Set relationship anniversary date
 LOVE_START_DATE = datetime(2022, 12, 10)  # Changed to December 10th
 
-# 日志文件路径
+# 判断是否在Vercel环境中运行
+IS_VERCEL = os.environ.get('VERCEL') == '1'
+
+# MongoDB 连接设置
+MONGODB_URI = os.getenv('MONGODB_URI')
+DB_NAME = os.getenv('MONGODB_DB', 'journal_db')
+COLLECTION_NAME = 'entries'
+
+# 初始化 MongoDB 客户端
+mongo_client = None
+try:
+    if MONGODB_URI:
+        mongo_client = pymongo.MongoClient(MONGODB_URI)
+        db = mongo_client[DB_NAME]
+        collection = db[COLLECTION_NAME]
+        app.logger.info("MongoDB 连接成功")
+    else:
+        app.logger.warning("未配置MongoDB URI，将使用本地文件存储")
+except Exception as e:
+    app.logger.error(f"MongoDB 连接错误: {e}")
+    mongo_client = None
+
+# 日志文件路径 - 在没有MongoDB或本地开发环境时使用
 JOURNAL_FILE = os.path.join(os.path.dirname(__file__), 'data/journal.json')
+if IS_VERCEL and not mongo_client:
+    # Vercel上没有MongoDB时使用/tmp目录
+    JOURNAL_FILE = '/tmp/journal.json'
 
 # 文件上传配置
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static/images')
@@ -43,16 +95,51 @@ def validate_image(stream):
 
 def load_journal():
     """加载日志数据"""
-    if os.path.exists(JOURNAL_FILE):
-        with open(JOURNAL_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return []
+    try:
+        # 如果 MongoDB 可用，从数据库中加载
+        if mongo_client:
+            entries = list(collection.find({}, {'_id': 0}))  # 排除MongoDB的_id字段
+            # 确保所有条目有正确的格式
+            return sorted(entries, key=lambda x: x.get('timestamp', 0), reverse=True)
+        
+        # 否则从本地文件加载
+        if os.path.exists(JOURNAL_FILE):
+            try:
+                with open(JOURNAL_FILE, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, IOError) as e:
+                app.logger.error(f"加载日志文件错误: {e}")
+                # 如果文件损坏或无法读取，返回空列表
+                return []
+        return []
+    except Exception as e:
+        app.logger.error(f"加载日志错误: {e}")
+        return []
 
 def save_journal(entries):
     """保存日志数据"""
-    os.makedirs(os.path.dirname(JOURNAL_FILE), exist_ok=True)
-    with open(JOURNAL_FILE, 'w', encoding='utf-8') as f:
-        json.dump(entries, f, ensure_ascii=False, indent=2)
+    try:
+        # 如果 MongoDB 可用，保存到数据库
+        if mongo_client:
+            # 清空现有数据
+            collection.delete_many({})
+            # 插入所有条目
+            if entries:
+                collection.insert_many(entries)
+            app.logger.info(f"成功保存 {len(entries)} 条日志到MongoDB")
+            return True
+        
+        # 否则保存到本地文件
+        dir_path = os.path.dirname(JOURNAL_FILE)
+        if dir_path and not os.path.exists(dir_path):
+            os.makedirs(dir_path, exist_ok=True)
+            
+        with open(JOURNAL_FILE, 'w', encoding='utf-8') as f:
+            json.dump(entries, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        app.logger.error(f"保存日志错误: {e}")
+        return False
 
 def get_image_files():
     # Get all images from the images directory
@@ -162,30 +249,55 @@ def add_entry():
         return render_template('add_entry.html', current_year=today.year)
         
     # POST request handling
-    title = request.form.get('title')
-    content = request.form.get('content')
-    author = request.form.get('author')
-    
-    if not all([title, content, author]):
-        flash('请填写所有必填字段')
+    try:
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        author = request.form.get('author', '').strip()
+        
+        if not all([title, content, author]):
+            flash('请填写所有必填字段')
+            return redirect(url_for('add_entry'))
+        
+        app.logger.info(f"尝试添加日志: {title} by {author}")
+        
+        now = datetime.now()
+        entry_id = str(int(now.timestamp()))
+        entry = {
+            'id': entry_id,
+            'title': title,
+            'content': content,
+            'author': author,
+            'date': now.strftime('%Y年%m月%d日'),
+            'time': now.strftime('%H:%M:%S'),
+            'timestamp': now.timestamp()
+        }
+        
+        # 如果直接使用MongoDB，可以单独添加条目
+        if mongo_client:
+            try:
+                collection.insert_one(entry)
+                app.logger.info(f"日志已直接添加到MongoDB: {entry_id}")
+                flash('日志添加成功')
+                return redirect(url_for('journal'))
+            except Exception as mongo_err:
+                app.logger.error(f"MongoDB添加日志失败: {mongo_err}")
+                # 如果MongoDB失败，回退到文件存储
+        
+        # 使用文件存储
+        entries = load_journal()
+        entries.append(entry)
+        if save_journal(entries):
+            flash('日志添加成功')
+            app.logger.info(f"日志已添加到文件存储: {entry_id}")
+        else:
+            flash('保存日志时出错，请稍后重试')
+            app.logger.error("文件存储保存日志失败")
+            
         return redirect(url_for('journal'))
-    
-    now = datetime.now()
-    entry = {
-        'id': str(int(now.timestamp())),
-        'title': title,
-        'content': content,
-        'author': author,
-        'date': now.strftime('%Y年%m月%d日'),
-        'time': now.strftime('%H:%M:%S'),
-        'timestamp': now.timestamp()
-    }
-    
-    entries = load_journal()
-    entries.append(entry)
-    save_journal(entries)
-    
-    return redirect(url_for('journal'))
+    except Exception as e:
+        app.logger.error(f"添加日志出错: {str(e)}")
+        flash(f'添加日志时发生错误，请联系管理员')
+        return redirect(url_for('add_entry'))
 
 @app.route('/edit/<id>')
 def edit(id):
@@ -216,21 +328,36 @@ def update_entry(id):
         flash('请填写所有必填字段')
         return redirect(url_for('edit', id=id))
     
-    entries = load_journal()
-    for entry in entries:
-        if entry['id'] == id:
-            entry['title'] = title
-            entry['content'] = content
-            entry['author'] = author
-            now = datetime.now()
-            entry['date'] = now.strftime('%Y年%m月%d日')
-            entry['time'] = now.strftime('%H:%M:%S')
-            entry['timestamp'] = now.timestamp()
-            break
-    
-    save_journal(entries)
-    flash('日志已更新')
-    return redirect(url_for('view_entry', id=id))
+    try:
+        entries = load_journal()
+        entry_found = False
+        
+        for entry in entries:
+            if entry['id'] == id:
+                entry['title'] = title
+                entry['content'] = content
+                entry['author'] = author
+                now = datetime.now()
+                entry['date'] = now.strftime('%Y年%m月%d日')
+                entry['time'] = now.strftime('%H:%M:%S')
+                entry['timestamp'] = now.timestamp()
+                entry_found = True
+                break
+        
+        if not entry_found:
+            flash('找不到指定的日志')
+            return redirect(url_for('journal'))
+            
+        if save_journal(entries):
+            flash('日志已更新')
+        else:
+            flash('更新日志时出错，请稍后重试')
+            
+        return redirect(url_for('view_entry', id=id))
+    except Exception as e:
+        app.logger.error(f"更新日志出错: {str(e)}")
+        flash('更新日志时发生错误，请联系管理员')
+        return redirect(url_for('edit', id=id))
 
 @app.route('/delete_entry', methods=['POST'])
 def delete_entry():
@@ -241,11 +368,43 @@ def delete_entry():
     if not entry_id:
         return redirect(url_for('journal'))
     
-    entries = load_journal()
-    entries = [entry for entry in entries if entry['id'] != entry_id]
-    save_journal(entries)
-    
-    return redirect(url_for('journal'))
+    try:
+        app.logger.info(f"尝试删除日志: {entry_id}")
+        
+        # 如果MongoDB可用，直接从数据库删除
+        if mongo_client:
+            result = collection.delete_one({'id': entry_id})
+            if result.deleted_count > 0:
+                app.logger.info(f"日志已从MongoDB中删除: {entry_id}")
+                flash('日志已删除')
+                return redirect(url_for('journal'))
+            else:
+                app.logger.warning(f"MongoDB中未找到要删除的日志: {entry_id}")
+                # 如果MongoDB中没有找到，回退到文件存储
+                
+        # 使用文件存储
+        entries = load_journal()
+        original_count = len(entries)
+        entries = [entry for entry in entries if entry['id'] != entry_id]
+        
+        if len(entries) == original_count:
+            # 没有删除任何条目
+            flash('找不到要删除的日志')
+            app.logger.warning(f"在文件存储中未找到要删除的日志: {entry_id}")
+            return redirect(url_for('journal'))
+        
+        if save_journal(entries):
+            flash('日志已删除')
+            app.logger.info(f"日志已从文件存储中删除: {entry_id}")
+        else:
+            flash('删除日志时出错，请稍后重试')
+            app.logger.error(f"从文件存储删除日志失败: {entry_id}")
+            
+        return redirect(url_for('journal'))
+    except Exception as e:
+        app.logger.error(f"删除日志出错: {str(e)}")
+        flash('删除日志时发生错误，请联系管理员')
+        return redirect(url_for('journal'))
 
 @app.route('/upload', methods=['POST'])
 def upload_image():

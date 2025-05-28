@@ -913,6 +913,22 @@ footer {
 
 
 
+/* 闪现消息样式 */
+.flash-messages {
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.flash-message {
+    padding: 1rem 1.5rem;
+    background-color: rgba(255, 107, 107, 0.2);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    text-align: left;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
     .container {

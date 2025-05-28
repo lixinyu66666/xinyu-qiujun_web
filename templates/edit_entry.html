@@ -18,6 +18,16 @@
                 <a href="{{ url_for('journal') }}" class="nav-btn"><i class="fas fa-book"></i> 返回日志</a>
             </div>
         </header>
+        
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for message in messages %}
+                <div class="flash-message">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
 
         <div class="journal-form">
             <form action="{{ url_for('update_entry', id=entry.id) }}" method="post">
