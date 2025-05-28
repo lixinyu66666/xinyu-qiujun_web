@@ -101,7 +101,11 @@ if IS_VERCEL and not mongo_client:
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static/images')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'JPG', 'JPEG', 'PNG', 'GIF'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+# 在Vercel环境下设置较小的大小限制，防止PAYLOAD_TOO_LARGE错误
+if IS_VERCEL:
+    app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024  # 4MB max file size for Vercel
+else:
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size for local
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -114,6 +118,20 @@ def validate_image(stream):
     if not format:
         return None
     return '.' + (format if format != 'jpeg' else 'jpg')
+
+def check_file_size(file):
+    """检查文件大小是否超过限制"""
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+    
+    # 计算Vercel环境的大小限制
+    vercel_limit = 4 * 1024 * 1024  # 4MB
+    
+    if IS_VERCEL and file_size > vercel_limit:
+        return False, f"文件大小 ({file_size/1024/1024:.1f}MB) 超过Vercel的限制 (4MB)"
+    
+    return True, "文件大小合适"
 
 def load_journal():
     """加载日志数据"""
@@ -479,23 +497,37 @@ def upload_image():
         return redirect(url_for('gallery'))
 
     if file and allowed_file(file.filename):
-        # 获取图片目录中的最后一个数字
-        images = [f for f in os.listdir(UPLOAD_FOLDER) 
-                 if f != 'background.jpg' and any(f.endswith(ext) for ext in ALLOWED_EXTENSIONS)]
-        next_number = len(images) + 1
-        
-        # 根据文件内容确定扩展名
-        file_ext = validate_image(file.stream)
-        if not file_ext:
-            flash('无效的图片文件')
+        # 检查文件大小
+        size_ok, message = check_file_size(file)
+        if not size_ok:
+            flash(f'图片太大: {message}')
+            app.logger.warning(f"图片上传失败: {message}")
             return redirect(url_for('gallery'))
             
-        # 构建新文件名
-        filename = f"{next_number:02d}{file_ext}"
-        
-        # 保存文件
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return redirect(url_for('gallery'))
+        try:
+            # 获取图片目录中的最后一个数字
+            images = [f for f in os.listdir(UPLOAD_FOLDER) 
+                    if f != 'background.jpg' and any(f.endswith(ext) for ext in ALLOWED_EXTENSIONS)]
+            next_number = len(images) + 1
+            
+            # 根据文件内容确定扩展名
+            file_ext = validate_image(file.stream)
+            if not file_ext:
+                flash('无效的图片文件')
+                return redirect(url_for('gallery'))
+                
+            # 构建新文件名
+            filename = f"{next_number:02d}{file_ext}"
+            
+            # 保存文件
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            flash('图片上传成功')
+            app.logger.info(f"图片上传成功: {filename}")
+            return redirect(url_for('gallery'))
+        except Exception as e:
+            app.logger.error(f"图片上传错误: {str(e)}")
+            flash(f'图片上传失败: 服务器错误')
+            return redirect(url_for('gallery'))
         
     flash('不支持的文件类型')
     return redirect(url_for('gallery'))

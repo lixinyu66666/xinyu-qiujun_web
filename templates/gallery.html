@@ -25,7 +25,18 @@
                     </label>
                 </form>
             </div>
+            <p class="upload-note">注意：图片大小不能超过4MB</p>
         </header>
+        
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for message in messages %}
+                <div class="flash-message">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
 
         <div class="gallery-section">
             <div class="image-slider">

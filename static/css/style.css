@@ -929,6 +929,14 @@ footer {
     animation: fadeIn 0.3s ease-in-out;
 }
 
+/* 上传提示样式 */
+.upload-note {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
     .container {
