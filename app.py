@@ -56,6 +56,7 @@ DB_NAME = os.getenv('MONGODB_DB', 'journal_db')
 COLLECTION_NAME = 'entries'
 
 # 初始化 MongoDB 客户端
+#
 mongo_client = None
 db = None
 collection = None
