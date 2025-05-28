@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ entry.title }} - 李新宇 ❤️ 孟秋君</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    
+    <div class="container">
+        <header>
+            <h1>{{ entry.title }}</h1>
+            <div class="nav-buttons">
+                <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> 返回主页</a>
+                <a href="{{ url_for('journal') }}" class="nav-btn"><i class="fas fa-book"></i> 返回日志</a>
+            </div>
+        </header>
+
+        <div class="entry-detail">
+            <div class="entry-info">
+                <span class="date"><i class="fas fa-calendar"></i> {{ entry.date }}</span>
+                <span class="author"><i class="fas fa-user"></i> {{ entry.author }}</span>
+                <span class="time"><i class="fas fa-clock"></i> {{ entry.time }}</span>
+            </div>
+            
+            <div class="entry-content">
+                {{ entry.content|safe|replace('\n', '<br>') }}
+            </div>
+            
+            <div class="entry-actions">
+                <div class="nav-buttons">
+                    <a href="{{ url_for('edit', id=entry.id) }}" class="nav-btn"><i class="fas fa-edit"></i> 编辑</a>
+                    <button onclick="if(confirm('确定要删除这篇日志吗？')) document.getElementById('delete-form').submit();" class="nav-btn"><i class="fas fa-trash"></i> 删除</button>
+                </div>
+                <form id="delete-form" action="{{ url_for('delete_entry') }}" method="post" style="display: none;">
+                    <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                </form>
+            </div>
+        </div>
+        
+        <footer>
+            <p>用❤️搭建 | {{ current_year }}</p>
+        </footer>
+    </div>
+</body>
+</html>

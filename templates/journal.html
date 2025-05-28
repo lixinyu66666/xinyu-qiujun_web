@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我们的日志 - 李新宇 ❤️ 孟秋君</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    
+    <div class="container">
+        <header>
+            <h1>我们的日志</h1>
+            <div class="nav-buttons">
+                <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> 返回主页</a>
+                <a href="{{ url_for('gallery') }}" class="nav-btn"><i class="fas fa-images"></i> 相册</a>
+            </div>
+        </header>
+
+        <div class="journal-section">
+            <div class="journal-controls">
+                <div class="add-entry">
+                    <a href="{{ url_for('add_entry') }}" class="nav-btn"><i class="fas fa-plus"></i> 添加新日志</a>
+                </div>
+                
+                <div class="sort-options">
+                    <select id="sort-select" onchange="window.location = this.value;">
+                        <option value="{{ url_for('journal', sort='newest') }}" {% if request.args.get('sort') == 'newest' or not request.args.get('sort') %}selected{% endif %}>最新优先</option>
+                        <option value="{{ url_for('journal', sort='oldest') }}" {% if request.args.get('sort') == 'oldest' %}selected{% endif %}>最早优先</option>
+                    </select>
+                    <label for="sort-select"><i class="fas fa-sort"></i></label>
+                </div>
+            </div>
+            
+            <div class="entries-list">
+                {% for entry in entries %}
+                <div class="entry-card">
+                    <h3>{{ entry.title }}</h3>
+                    <div class="entry-meta">
+                        <span><i class="fas fa-calendar"></i> {{ entry.date }}</span>
+                        <span><i class="fas fa-user"></i> {{ entry.author }}</span>
+                        <span><i class="fas fa-clock"></i> {{ entry.time }}</span>
+                    </div>
+                    <div class="entry-preview">{{ entry.content[:200] }}{% if entry.content|length > 200 %}...{% endif %}</div>
+                    <div class="entry-actions">
+                        <a href="{{ url_for('view_entry', id=entry.id) }}" class="read-more-btn">
+                            <span>阅读全文</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <footer>
+            <p>用❤️搭建 | {{ current_year }}</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -8,7 +8,7 @@
     --primary-color: #ff6b6b;
     --secondary-color: #4ecdc4;
     --accent-color: #ffe66d;
-    --dark-bg: rgba(0, 0, 0, 0.7);
+    --dark-bg: rgba(0, 0, 0, 0.5);
     --light-text: #ffffff;
     --glass-effect: blur(10px);
     --heart-color: #ff4757;
@@ -37,8 +37,8 @@ body {
     right: 0;
     bottom: 0;
     background: linear-gradient(to right, 
-                rgba(0, 0, 0, 0.7), 
-                rgba(0, 0, 0, 0.4));
+                rgba(0, 0, 0, 0.5), 
+                rgba(0, 0, 0, 0.3));
     z-index: -1;
     animation: gradientShift 30s infinite alternate;
 }
@@ -46,23 +46,23 @@ body {
 @keyframes gradientShift {
     0% {
         background: linear-gradient(to right, 
-                    rgba(0, 0, 0, 0.7), 
-                    rgba(0, 0, 0, 0.4));
+                    rgba(0, 0, 0, 0.5), 
+                    rgba(0, 0, 0, 0.3));
     }
     33% {
         background: linear-gradient(to right, 
-                    rgba(66, 39, 90, 0.7),
-                    rgba(115, 75, 109, 0.4));
+                    rgba(66, 39, 90, 0.5),
+                    rgba(115, 75, 109, 0.3));
     }
     66% {
         background: linear-gradient(to right, 
-                    rgba(35, 61, 77, 0.7),
-                    rgba(80, 95, 107, 0.4));
+                    rgba(35, 61, 77, 0.5),
+                    rgba(80, 95, 107, 0.3));
     }
     100% {
         background: linear-gradient(to right, 
-                    rgba(121, 33, 33, 0.7),
-                    rgba(121, 72, 72, 0.4));
+                    rgba(121, 33, 33, 0.5),
+                    rgba(121, 72, 72, 0.3));
     }
 }
 
@@ -106,6 +106,38 @@ header h1::after {
     width: 50%;
     height: 3px;
     background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+}
+
+.nav-buttons {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.8rem 1.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--light-text);
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.nav-btn i {
+    margin-right: 0.5rem;
+}
+
+.nav-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
 .heart-symbol {
@@ -247,7 +279,7 @@ header h1::after {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.2);
     border-radius: 50%;
 }
 
@@ -330,10 +362,12 @@ header h1::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.2);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 1rem;
     opacity: 0;
     transition: opacity 0.3s;
 }
@@ -343,7 +377,7 @@ header h1::after {
     color: white;
 }
 
-.img-container:hover .hover-overlay {
+.slide:hover .hover-overlay {
     opacity: 1;
 }
 
@@ -410,7 +444,7 @@ footer {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.95);
+    background-color: rgba(0, 0, 0, 0.85);
     display: none;
     justify-content: center;
     align-items: center;
@@ -451,7 +485,435 @@ footer {
     transform: scale(1.2);
 }
 
-/* Responsive adjustments */
+/* Journal styles */
+.journal-section {
+    padding: 2rem 0;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.journal-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.add-entry {
+    flex-grow: 1;
+}
+
+.sort-options {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.sort-options select {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem 0.8rem 1rem;
+    border-radius: 25px;
+    appearance: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.sort-options label {
+    position: absolute;
+    right: 10px;
+    pointer-events: none;
+}
+
+.add-btn {
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+}
+
+.add-btn:hover {
+    background-color: #45b8b0;
+    transform: translateY(-2px);
+}
+
+.entry-form, .edit-form {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1rem;
+}
+
+.form-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.submit-btn, .cancel-btn {
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.submit-btn {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.submit-btn:hover {
+    background-color: #45b8b0;
+}
+
+.cancel-btn {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.cancel-btn:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.entry-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    transition: transform 0.3s;
+}
+
+.entry-card:hover {
+    transform: translateY(-3px);
+}
+
+.entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.entry-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.read-more-btn {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 25px;
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.read-more-btn:hover {
+    background-color: #ff5252;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.read-more-btn span {
+    margin-right: 0.5rem;
+}
+
+.read-more-btn i {
+    transition: transform 0.2s ease;
+}
+
+.read-more-btn:hover i {
+    transform: translateX(4px);
+}
+
+/* 日志详情页面的操作按钮样式 */
+.entry-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    font-family: 'Arial', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn i {
+    margin-right: 0.5rem;
+}
+
+.edit-btn {
+    background-color: var(--secondary-color);
+}
+
+.edit-btn:hover {
+    background-color: #3db9b0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+}
+
+.delete-btn {
+    background-color: #ff4757;
+}
+
+.delete-btn:hover {
+    background-color: #ff3545;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+}
+
+.entry-header h3 {
+    font-size: 1.5rem;
+    color: var(--accent-color);
+    margin: 0;
+}
+
+.entry-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.edit-btn, .delete-btn {
+    background: none;
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.edit-btn {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.delete-btn {
+    background-color: rgba(255, 69, 58, 0.7);
+}
+
+.edit-btn:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.delete-btn:hover {
+    background-color: rgba(255, 69, 58, 0.9);
+    transform: scale(1.1);
+}
+
+.entry-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 1rem;
+}
+
+.entry-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.entry-content {
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.no-entries {
+    text-align: center;
+    padding: 3rem 0;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.no-entries i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* 搜索部分样式 */
+.search-section {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.search-form {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    padding: 0.5rem;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.search-input {
+    background: none;
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    width: 300px;
+    outline: none;
+}
+
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.search-btn {
+    background: none;
+    border: none;
+    color: white;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+/* 优化的日志表单样式 */
+.journal-form {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 2.5rem;
+    margin: 2rem auto;
+    max-width: 1000px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.journal-form .form-group {
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.journal-form label {
+    display: block;
+    margin-bottom: 0.8rem;
+    font-size: 1.2rem;
+    color: #fff;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.journal-form input[type="text"],
+.journal-form textarea {
+    width: 100%;
+    padding: 1rem 1.2rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background-color: rgba(0, 0, 0, 0.2);
+    color: white;
+    font-size: 1.2rem;
+    line-height: 1.6;
+    transition: all 0.3s ease;
+}
+
+.journal-form input[type="text"]:focus,
+.journal-form textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(255, 107, 107, 0.3);
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.journal-form input[type="text"] {
+    height: 50px;
+}
+
+.journal-form textarea {
+    resize: vertical;
+    min-height: 300px;
+    font-family: 'Arial', sans-serif;
+}
+
+/* 改进日志内容显示样式 */
+.entry-content {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    line-height: 1.8;
+    font-size: 1.1rem;
+    text-align: left;
+    white-space: pre-line;
+}
+
+.journal-form .form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    margin-top: 3rem;
+}
+
+.journal-form .btn {
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+}
+
+.journal-form .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+
+
+/* 响应式调整 */
 @media (max-width: 768px) {
     .container {
         padding: 1.5rem;
@@ -472,4 +934,16 @@ footer {
     .days {
         font-size: 3rem;
     }
-} 
+    
+    .search-input {
+        width: 200px;
+    }
+    
+    .journal-section {
+        padding: 1rem;
+    }
+    
+    .entry-form, .edit-form {
+        padding: 1rem;
+    }
+}

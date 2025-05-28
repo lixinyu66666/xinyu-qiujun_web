@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我们的照片 - 李新宇 ❤️ 孟秋君</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    
+    <div class="container">
+        <header>
+            <h1>我们的照片</h1>
+            <div class="nav-buttons">
+                <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> 返回主页</a>
+                <a href="{{ url_for('journal') }}" class="nav-btn"><i class="fas fa-book"></i> 日志</a>
+            </div>
+            <div class="nav-buttons" style="margin-top: 10px;">
+                <form action="{{ url_for('upload_image') }}" method="post" enctype="multipart/form-data" style="display: inline;">
+                    <label class="nav-btn" style="cursor: pointer;">
+                        <i class="fas fa-upload"></i> 上传新照片
+                        <input type="file" name="image" accept="image/*" style="display: none;" onchange="this.form.submit()">
+                    </label>
+                </form>
+            </div>
+        </header>
+
+        <div class="gallery-section">
+            <div class="image-slider">
+                <div class="slider-container">
+                    {% for image in images %}
+                    <div class="slide">
+                        <div class="img-container" data-image="{{ url_for('static', filename='images/' + image) }}">
+                            <img src="{{ url_for('static', filename='images/' + image) }}" alt="我们的照片">
+                            <div class="hover-overlay">
+                                <i class="fas fa-expand-arrows-alt"></i>
+                                <form action="{{ url_for('delete_image') }}" method="post" class="delete-form">
+                                    <input type="hidden" name="image" value="{{ image }}">
+                                    <button type="submit" class="delete-btn" onclick="return confirm('确定要删除这张照片吗？')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="slider-controls">
+                    <button class="control-btn prev-btn"><i class="fas fa-chevron-left"></i></button>
+                    <div class="slide-indicator">
+                        <span class="current-slide">1</span>/<span class="total-slides">{{ images|length }}</span>
+                    </div>
+                    <button class="control-btn next-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>用❤️搭建 | {{ current_year }}</p>
+        </footer>
+    </div>
+    
+    <div class="fullscreen-overlay">
+        <div class="fullscreen-content">
+            <img src="" alt="全屏照片">
+            <button class="close-fullscreen"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

@@ -13,6 +13,10 @@
     <div class="container">
         <header>
             <h1>李新宇 <span class="heart-symbol">❤️</span> 孟秋君</h1>
+            <div class="nav-buttons">
+                <a href="{{ url_for('gallery') }}" class="nav-btn"><i class="fas fa-images"></i> 相册</a>
+                <a href="{{ url_for('journal') }}" class="nav-btn"><i class="fas fa-book"></i> 日志</a>
+            </div>
         </header>
         
         <div class="dashboard">
@@ -39,31 +43,6 @@
                     <i class="fas fa-gift"></i>
                     <span>下一个纪念日：{{ next_milestone }}</span>
                     <span class="days-left">(还有 {{ days_to_milestone }} 天)</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="gallery-section">
-            <h2>我们的回忆</h2>
-            <div class="image-slider">
-                <div class="slider-container">
-                    {% for image in images %}
-                    <div class="slide">
-                        <div class="img-container" data-image="{{ url_for('static', filename='images/' + image) }}">
-                            <img src="{{ url_for('static', filename='images/' + image) }}" alt="我们的照片">
-                            <div class="hover-overlay">
-                                <i class="fas fa-expand-arrows-alt"></i>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                <div class="slider-controls">
-                    <button class="control-btn prev-btn"><i class="fas fa-chevron-left"></i></button>
-                    <div class="slide-indicator">
-                        <span class="current-slide">1</span>/<span class="total-slides">{{ images|length }}</span>
-                    </div>
-                    <button class="control-btn next-btn"><i class="fas fa-chevron-right"></i></button>
                 </div>
             </div>
         </div>

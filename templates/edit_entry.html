@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑日志 - 李新宇 ❤️ 孟秋君</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    
+    <div class="container">
+        <header>
+            <h1>编辑日志</h1>
+            <div class="nav-buttons">
+                <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> 返回主页</a>
+                <a href="{{ url_for('journal') }}" class="nav-btn"><i class="fas fa-book"></i> 返回日志</a>
+            </div>
+        </header>
+
+        <div class="journal-form">
+            <form action="{{ url_for('update_entry', id=entry.id) }}" method="post">
+                <div class="form-group">
+                    <label for="title">标题</label>
+                    <input type="text" id="title" name="title" value="{{ entry.title }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="author">作者</label>
+                    <input type="text" id="author" name="author" value="{{ entry.author }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="content">内容</label>
+                    <textarea id="content" name="content" required rows="10">{{ entry.content }}</textarea>
+                </div>
+                
+                <div class="nav-buttons">
+                    <button type="submit" class="nav-btn"><i class="fas fa-save"></i> 保存</button>
+                    <a href="{{ url_for('view_entry', id=entry.id) }}" class="nav-btn"><i class="fas fa-times"></i> 取消</a>
+                </div>
+            </form>
+        </div>
+        
+        <footer>
+            <p>用❤️搭建 | {{ current_year }}</p>
+        </footer>
+    </div>
+</body>
+</html>
