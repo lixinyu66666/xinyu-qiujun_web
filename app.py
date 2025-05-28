@@ -14,27 +14,6 @@ CHINA_TIMEZONE = pytz.timezone('Asia/Shanghai')
 # Load environment variables
 load_dotenv()
 
-# 确保上传目录存在
-def ensure_upload_directory():
-    """确保上传目录存在并可写入"""
-    try:
-        upload_dir = os.path.join(os.path.dirname(__file__), 'static/images')
-        if not os.path.exists(upload_dir):
-            os.makedirs(upload_dir, exist_ok=True)
-            print(f"创建上传目录: {upload_dir}")
-        # 测试目录是否可写
-        test_file = os.path.join(upload_dir, '.write_test')
-        with open(test_file, 'w') as f:
-            f.write('test')
-        os.remove(test_file)
-        return True
-    except Exception as e:
-        print(f"警告：上传目录设置错误: {str(e)}")
-        return False
-
-# 应用启动时检查上传目录
-ensure_upload_directory()
-
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))  # For session encryption
 
@@ -74,6 +53,50 @@ LOVE_START_DATE = datetime(2022, 12, 10, tzinfo=pytz.timezone('Asia/Shanghai')) 
 
 # 判断是否在Vercel环境中运行
 IS_VERCEL = os.environ.get('VERCEL') == '1'
+
+# 确保上传目录存在并可写
+def ensure_upload_directory():
+    """确保上传目录存在并可写入
+    
+    在Vercel环境中处理权限问题
+    """
+    global UPLOAD_FOLDER
+    try:
+        # 初始化常规上传目录
+        upload_dir = os.path.join(os.path.dirname(__file__), 'static/images')
+        
+        # 检查是否在Vercel环境中运行
+        if IS_VERCEL:
+            print("检测到Vercel环境，可能需要使用临时上传目录")
+            
+            # 直接切换到/tmp目录，Vercel环境下static/images通常只读
+            upload_dir = '/tmp/images'
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir, exist_ok=True)
+                
+            # 测试临时目录
+            test_file = os.path.join(upload_dir, '.write_test')
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+            print(f"已设置临时上传目录: {upload_dir}")
+        else:
+            # 非Vercel环境：确保目录存在
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir, exist_ok=True)
+                
+            # 测试目录是否可写
+            test_file = os.path.join(upload_dir, '.write_test')
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+        
+        # 更新全局UPLOAD_FOLDER变量
+        UPLOAD_FOLDER = upload_dir
+        return True
+    except Exception as e:
+        print(f"警告：上传目录设置错误: {str(e)}")
+        return False
 
 # MongoDB 连接设置
 MONGODB_URI = os.getenv('MONGODB_URI')
@@ -124,6 +147,8 @@ if IS_VERCEL and not mongo_client:
 
 # 文件上传配置
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static/images')
+# 在应用启动时检查并确保上传目录可写
+ensure_upload_directory()
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'JPG', 'JPEG', 'PNG', 'GIF'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # 在Vercel环境下设置较小的大小限制，防止PAYLOAD_TOO_LARGE错误
@@ -133,120 +158,30 @@ else:
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size for local
 
 def allowed_file(filename):
-    """检查文件扩展名是否在允许的列表中
-    
-    增强版本：增加额外的验证和日志记录
-    """
-    if not filename or '.' not in filename:
-        app.logger.warning(f"文件名无效或没有扩展名: {filename}")
-        return False
-        
-    # 获取扩展名并转为小写
-    ext = filename.rsplit('.', 1)[1].lower()
-    
-    # 检查扩展名是否在允许列表中
-    is_allowed = ext in ALLOWED_EXTENSIONS
-    
-    if is_allowed:
-        app.logger.info(f"文件类型被允许: {ext}")
-    else:
-        app.logger.warning(f"文件类型不被允许: {ext}")
-        
-    return is_allowed
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def validate_image(stream):
-    """验证图片格式并返回适当的文件扩展名
-    
-    增强版本：添加更多错误处理和格式支持
-    """
-    try:
-        # 保存原始位置
-        original_position = stream.tell()
-        
-        # 读取前512字节以检测文件类型
-        header = stream.read(512)
-        # 恢复文件指针位置
-        stream.seek(original_position)
-        
-        # 使用imghdr识别格式
-        format = imghdr.what(None, header)
-        app.logger.info(f"图片格式检测结果: {format}")
-        
-        # 常见格式映射
-        format_map = {
-            'jpeg': '.jpg',
-            'jpg': '.jpg',
-            'png': '.png',
-            'gif': '.gif',
-            'bmp': '.bmp',
-            'webp': '.webp'
-        }
-        
-        if format and format in format_map:
-            app.logger.info(f"使用imghdr检测到格式: {format}")
-            return format_map[format]
-        elif format:
-            app.logger.info(f"使用imghdr检测到未映射格式: {format}")
-            return f".{format}"
-        
-        # 如果imghdr识别失败，尝试基于header进行简单的标记检查
-        if header.startswith(b'\xff\xd8'):
-            app.logger.info("通过header检测到JPEG格式")
-            return '.jpg'
-        elif header.startswith(b'\x89PNG\r\n\x1a\n'):
-            app.logger.info("通过header检测到PNG格式")
-            return '.png'
-        elif header.startswith(b'GIF87a') or header.startswith(b'GIF89a'):
-            app.logger.info("通过header检测到GIF格式")
-            return '.gif'
-            
-        # 最后的兜底方案：如果无法识别，记录头部字节
-        app.logger.warning(f"无法识别的图片格式，头部十六进制: {header[:20].hex()}")
+    header = stream.read(512)
+    stream.seek(0)
+    format = imghdr.what(None, header)
+    if not format:
         return None
-    except Exception as e:
-        app.logger.error(f"验证图片格式时发生错误: {str(e)}", exc_info=True)
-        # 尝试重置流指针
-        try:
-            stream.seek(original_position)
-        except:
-            pass
-        return None
+    return '.' + (format if format != 'jpeg' else 'jpg')
 
 def check_file_size(file):
-    """检查文件大小是否超过限制
+    """检查文件大小是否超过限制"""
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
     
-    增强版本：增加异常处理，确保文件指针正确重置
-    """
-    try:
-        # 保存当前文件指针位置
-        current_pos = file.tell()
-        
-        # 移动到文件末尾获取大小
-        file.seek(0, os.SEEK_END)
-        file_size = file.tell()
-        
-        # 恢复原始文件指针位置
-        file.seek(current_pos)
-        
-        app.logger.info(f"上传文件大小: {file_size/1024/1024:.2f}MB")
-        
-        # 确定大小限制
-        size_limit = 4 * 1024 * 1024 if IS_VERCEL else 16 * 1024 * 1024
-        limit_mb = 4 if IS_VERCEL else 16
-        
-        # 验证文件大小
-        if file_size > size_limit:
-            return False, f"文件大小 ({file_size/1024/1024:.1f}MB) 超过限制 ({limit_mb}MB)"
-        
-        return True, "文件大小合适"
-    except Exception as e:
-        app.logger.error(f"检查文件大小时出错: {str(e)}")
-        try:
-            # 尝试重置文件指针到开始位置
-            file.seek(0)
-        except:
-            pass
-        return False, f"无法验证文件大小: {str(e)}"
+    # 计算Vercel环境的大小限制
+    vercel_limit = 4 * 1024 * 1024  # 4MB
+    
+    if IS_VERCEL and file_size > vercel_limit:
+        return False, f"文件大小 ({file_size/1024/1024:.1f}MB) 超过Vercel的限制 (4MB)"
+    
+    return True, "文件大小合适"
 
 def load_journal():
     """加载日志数据"""
@@ -308,9 +243,41 @@ def save_journal(entries):
         return False
 
 def get_image_files():
-    # Get all images from the images directory
-    img_dir = os.path.join(os.path.dirname(__file__), 'static/images')
+    """获取图片文件列表，支持临时目录
+    
+    在Vercel环境中支持从临时目录加载图片
+    """
+    # 使用当前设置的UPLOAD_FOLDER变量，这可能是/tmp/images或static/images
+    images = []
     valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.JPG', '.JPEG', '.PNG', '.GIF'}
+    
+    try:
+        # 从实际上传目录获取图片
+        for file in os.listdir(UPLOAD_FOLDER):
+            if file == "background.jpg" or file.startswith('.'):
+                continue
+                
+            if any(file.endswith(ext) for ext in ALLOWED_EXTENSIONS):
+                if file not in images:
+                    images.append(file)
+    except Exception as e:
+        app.logger.error(f"无法读取上传目录: {str(e)}")
+        
+    # 如果使用临时目录且没有找到图片，尝试从标准静态目录读取
+    if len(images) == 0 and '/tmp/' in UPLOAD_FOLDER:
+        std_img_dir = os.path.join(os.path.dirname(__file__), 'static/images')
+        try:
+            for file in os.listdir(std_img_dir):
+                if file == "background.jpg" or file.startswith('.'):
+                    continue
+                    
+                if any(file.endswith(ext) for ext in ALLOWED_EXTENSIONS):
+                    if file not in images:
+                        images.append(file)
+        except Exception as e:
+            app.logger.error(f"无法读取静态图片目录: {str(e)}")
+    
+    return sorted(images)
     images = []
     if os.path.exists(img_dir):
         for file in os.listdir(img_dir):
@@ -599,191 +566,89 @@ def delete_entry():
 
 @app.route('/upload', methods=['POST'])
 def upload_image():
-    app.logger.info("开始处理图片上传请求")
     if not session.get('logged_in'):
-        app.logger.warning("未登录用户尝试上传图片")
         return redirect(url_for('login'))
 
     if 'image' not in request.files:
-        app.logger.warning("上传请求中没有图片文件")
         flash('没有选择文件')
         return redirect(url_for('gallery'))
         
     file = request.files['image']
-    app.logger.info(f"接收到文件上传: {file.filename}")
-    
     if file.filename == '':
-        app.logger.warning("上传的文件名为空")
         flash('没有选择文件')
         return redirect(url_for('gallery'))
 
-    if not allowed_file(file.filename):
-        app.logger.warning(f"不支持的文件类型: {file.filename}")
-        flash('不支持的文件类型')
-        return redirect(url_for('gallery'))
-        
-    # 检查文件大小
-    size_ok, message = check_file_size(file)
-    if not size_ok:
-        app.logger.warning(f"图片太大: {message}")
-        flash(f'图片太大: {message}')
-        return redirect(url_for('gallery'))
-        
-    # 完全重写上传逻辑
-    try:
-        app.logger.info("开始处理文件保存流程")
-        
-        # 确保上传目录存在且可写入
-        if not os.path.exists(UPLOAD_FOLDER):
-            app.logger.info(f"创建上传目录: {UPLOAD_FOLDER}")
-            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        
-        # 测试目录是否可写
-        try:
-            test_file = os.path.join(UPLOAD_FOLDER, '.write_test')
-            with open(test_file, 'w') as f:
-                f.write('test')
-            os.remove(test_file)
-            app.logger.info("上传目录可写入")
-        except Exception as perm_err:
-            app.logger.error(f"上传目录权限错误: {str(perm_err)}")
-            flash('服务器配置错误: 上传目录不可写')
+    if file and allowed_file(file.filename):
+        # 检查文件大小
+        size_ok, message = check_file_size(file)
+        if not size_ok:
+            flash(f'图片太大: {message}')
+            app.logger.warning(f"图片上传失败: {message}")
             return redirect(url_for('gallery'))
             
-        # 获取现有图片列表
         try:
-            images = [f for f in os.listdir(UPLOAD_FOLDER) 
-                     if f != 'background.jpg' and any(f.endswith(ext) for ext in ALLOWED_EXTENSIONS)]
-            next_number = len(images) + 1
-            app.logger.info(f"下一个图片编号: {next_number}")
-        except Exception as list_err:
-            app.logger.error(f"获取图片列表出错: {str(list_err)}")
-            next_number = 1 # 如果出错，默认从1开始
-        
-        # 确定文件扩展名
-        original_ext = os.path.splitext(file.filename)[1].lower()
-        
-        # 如果原始扩展名不符合要求，尝试验证图片格式
-        if original_ext not in ['.jpg', '.jpeg', '.png', '.gif', '.JPG', '.JPEG', '.PNG', '.GIF']:
-            try:
-                file_ext = validate_image(file.stream)
-                if not file_ext:
-                    app.logger.warning("无法验证图片格式且原始扩展名无效")
-                    flash('无效的图片文件格式')
-                    return redirect(url_for('gallery'))
-            except Exception as fmt_err:
-                app.logger.error(f"验证图片格式错误: {str(fmt_err)}")
-                flash('无法验证图片格式')
+            # 再次确保上传目录存在并可写
+            if not ensure_upload_directory():
+                app.logger.error("上传目录不可写，无法继续上传")
+                flash('服务器配置错误: 上传目录不可写')
                 return redirect(url_for('gallery'))
-        else:
-            # 使用标准化的小写扩展名
-            file_ext = original_ext.lower()
-            app.logger.info(f"使用原始文件扩展名: {file_ext}")
             
-        # 保存文件
-        filename = f"{next_number:02d}{file_ext}"
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
-        
-        # 避免覆盖现有文件
-        while os.path.exists(file_path):
-            next_number += 1
-            filename = f"{next_number:02d}{file_ext}"
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-        
-        app.logger.info(f"即将保存文件: {file_path}")
-        
-        # 使用更安全的文件保存方法
-        try:
-            # 创建临时文件
-            temp_path = os.path.join(UPLOAD_FOLDER, f".temp_{filename}")
-            
-            # 保存到临时文件
-            file.save(temp_path)
-            app.logger.info(f"文件已保存到临时位置: {temp_path}")
-            
-            # 如果临时文件存在，则重命名为最终文件名
-            if os.path.exists(temp_path):
-                # 如果目标文件存在，先删除
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                
-                # 重命名临时文件
-                os.rename(temp_path, file_path)
-                app.logger.info(f"临时文件已重命名为: {file_path}")
-            else:
-                raise Exception("临时文件未能创建")
-        except Exception as save_err:
-            app.logger.error(f"保存文件过程中出错: {str(save_err)}")
-            # 清理可能留下的临时文件
-            if os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except:
-                    pass
-            raise save_err
-        
-        # 验证文件是否已成功保存
-        if os.path.exists(file_path):
-            file_size = os.path.getsize(file_path)
-            app.logger.info(f"图片上传成功: {filename}, 大小: {file_size/1024:.1f}KB")
-            flash('图片上传成功')
-        else:
-            app.logger.error(f"文件保存失败: {file_path}")
-            flash('图片上传失败: 保存失败')
-            
-        return redirect(url_for('gallery'))
-    except Exception as e:
-        app.logger.error(f"图片上传错误: {str(e)}", exc_info=True)
-        flash('图片上传失败: 服务器处理错误')
-        return redirect(url_for('gallery'))
-            
-        try:
             # 获取图片目录中的最后一个数字
-            images = [f for f in os.listdir(UPLOAD_FOLDER) 
-                    if f != 'background.jpg' and any(f.endswith(ext) for ext in ALLOWED_EXTENSIONS)]
-            next_number = len(images) + 1
-            
-            # 确保上传目录存在
-            if not os.path.exists(UPLOAD_FOLDER):
-                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-                app.logger.info(f"创建上传文件夹: {UPLOAD_FOLDER}")
-                
-            # 根据文件内容确定扩展名
             try:
-                file_ext = validate_image(file.stream)
-                if not file_ext:
-                    app.logger.warning("无法验证图片格式")
-                    # 使用原始文件扩展名作为后备
-                    original_ext = os.path.splitext(file.filename)[1].lower()
-                    if original_ext in ['.jpg', '.jpeg', '.png', '.gif']:
-                        file_ext = original_ext
-                    else:
-                        flash('无效的图片文件')
-                        return redirect(url_for('gallery'))
-            except Exception as img_err:
-                app.logger.error(f"验证图片格式时出错: {str(img_err)}")
-                # 使用原始文件扩展名
-                file_ext = os.path.splitext(file.filename)[1].lower()
+                images = [f for f in os.listdir(UPLOAD_FOLDER) 
+                        if f != 'background.jpg' and any(f.endswith(ext) for ext in ALLOWED_EXTENSIONS)]
+                next_number = len(images) + 1
+            except Exception as dir_err:
+                app.logger.error(f"无法获取图片列表: {str(dir_err)}")
+                next_number = 1  # 如果无法获取列表，从1开始
+            
+            # 根据文件内容确定扩展名
+            file_ext = validate_image(file.stream)
+            if not file_ext:
+                flash('无效的图片文件')
+                return redirect(url_for('gallery'))
                 
             # 构建新文件名
             filename = f"{next_number:02d}{file_ext}"
             
-            # 保存文件
-            target_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            app.logger.info(f"尝试保存文件到: {target_path}")
-            file.save(target_path)
+            # 先写入临时文件，再重命名
+            target_path = os.path.join(UPLOAD_FOLDER, filename)
+            temp_path = os.path.join(UPLOAD_FOLDER, f".temp_{filename}")
             
-            # 验证文件是否已成功保存
-            if os.path.exists(target_path):
+            app.logger.info(f"尝试保存文件到: {target_path}")
+            file.save(temp_path)
+            
+            # 如果临时文件存在，重命名为最终文件名
+            if os.path.exists(temp_path):
+                os.rename(temp_path, target_path)
                 app.logger.info(f"图片上传成功: {filename}")
+                
+                # 如果在Vercel环境中使用临时目录，尝试复制到静态目录
+                if IS_VERCEL and '/tmp/' in UPLOAD_FOLDER:
+                    try:
+                        static_dir = os.path.join(os.path.dirname(__file__), 'static/images')
+                        if not os.path.exists(static_dir):
+                            os.makedirs(static_dir, exist_ok=True)
+                            
+                        static_path = os.path.join(static_dir, filename)
+                        
+                        # 复制文件到静态目录
+                        with open(target_path, 'rb') as src_file:
+                            with open(static_path, 'wb') as dst_file:
+                                dst_file.write(src_file.read())
+                                
+                        app.logger.info(f"已复制图片到静态目录: {static_path}")
+                    except Exception as copy_err:
+                        app.logger.error(f"复制到静态目录失败 (不影响上传): {str(copy_err)}")
+                
                 flash('图片上传成功')
             else:
-                app.logger.error(f"文件保存失败: {target_path}")
+                app.logger.error(f"临时文件未能创建: {temp_path}")
                 flash('图片上传失败: 无法保存文件')
-            
+                
             return redirect(url_for('gallery'))
         except Exception as e:
-            app.logger.error(f"图片上传错误: {str(e)}", exc_info=True)
+            app.logger.error(f"图片上传错误: {str(e)}")
             flash(f'图片上传失败: 服务器错误')
             return redirect(url_for('gallery'))
         
@@ -801,11 +666,27 @@ def delete_image():
         return redirect(url_for('gallery'))
         
     try:
-        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], image))
+        # 尝试从当前上传目录删除文件
+        file_path = os.path.join(UPLOAD_FOLDER, image)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            app.logger.info(f"已从上传目录删除图片: {file_path}")
+            
+        # 如果是临时目录，同时检查原始静态目录
+        if '/tmp/' in UPLOAD_FOLDER:
+            std_path = os.path.join(os.path.dirname(__file__), 'static/images', image)
+            if os.path.exists(std_path):
+                try:
+                    os.remove(std_path)
+                    app.logger.info(f"已从静态目录删除图片: {std_path}")
+                except Exception as std_err:
+                    app.logger.error(f"删除静态目录图片失败: {str(std_err)}")
+                    
         # 重命名剩余文件以保持连续性
         rename_remaining_images()
         flash('图片已删除')
     except Exception as e:
+        app.logger.error(f"删除图片出错: {str(e)}")
         flash('删除图片时出错')
         
     return redirect(url_for('gallery'))
@@ -859,29 +740,12 @@ def api_status():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     
-    # 检查上传目录状态
-    upload_dir_exists = os.path.exists(UPLOAD_FOLDER)
-    upload_dir_writable = False
-    if upload_dir_exists:
-        try:
-            test_file = os.path.join(UPLOAD_FOLDER, '.write_test')
-            with open(test_file, 'w') as f:
-                f.write('test')
-            os.remove(test_file)
-            upload_dir_writable = True
-        except:
-            pass
-    
     status = {
         'mongodb_connected': mongo_client is not None,
         'entries_count': len(load_journal()),
         'vercel': IS_VERCEL,
         'mongodb_uri_configured': MONGODB_URI is not None,
-        'time': datetime.now(CHINA_TIMEZONE).strftime('%Y-%m-%d %H:%M:%S'),
-        'upload_folder': UPLOAD_FOLDER,
-        'upload_folder_exists': upload_dir_exists,
-        'upload_folder_writable': upload_dir_writable,
-        'max_upload_size': app.config['MAX_CONTENT_LENGTH'] / (1024 * 1024)
+        'time': datetime.now(CHINA_TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')
     }
     
     return status
@@ -889,112 +753,38 @@ def api_status():
 # Application instance for Vercel
 application = app
 
-# 添加一个测试上传的路由，便于调试
-@app.route('/test_upload')
-def test_upload():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-        
-    # 检查上传目录状态
-    upload_dir_exists = os.path.exists(UPLOAD_FOLDER)
-    upload_dir_writable = False
-    if upload_dir_exists:
-        try:
-            test_file = os.path.join(UPLOAD_FOLDER, '.write_test')
-            with open(test_file, 'w') as f:
-                f.write('test')
-            os.remove(test_file)
-            upload_dir_writable = True
-        except Exception as e:
-            app.logger.error(f"上传目录权限测试失败: {str(e)}")
-    
-    # 查找已有的图片文件
-    images = []
-    if os.path.exists(UPLOAD_FOLDER):
-        for file in os.listdir(UPLOAD_FOLDER):
-            if file != "background.jpg" and any(file.endswith(ext) for ext in ALLOWED_EXTENSIONS):
-                file_path = os.path.join(UPLOAD_FOLDER, file)
-                file_size = os.path.getsize(file_path)
-                file_mode = oct(os.stat(file_path).st_mode)[-3:]
-                images.append({
-                    'name': file,
-                    'size': f"{file_size/1024:.1f}KB",
-                    'mode': file_mode,
-                    'readable': os.access(file_path, os.R_OK),
-                    'writable': os.access(file_path, os.W_OK)
-                })
-    
-    # 返回HTML页面
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>上传测试</title>
-        <style>
-            body {{ font-family: Arial; padding: 20px; }}
-            h1, h2 {{ color: #333; }}
-            .good {{ color: green; }}
-            .bad {{ color: red; }}
-            table {{ border-collapse: collapse; width: 100%; }}
-            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-            th {{ background-color: #f2f2f2; }}
-            .form-container {{ margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 5px; }}
-        </style>
-    </head>
-    <body>
-        <h1>图片上传测试页面</h1>
-        
-        <h2>系统状态</h2>
-        <p>上传目录: {UPLOAD_FOLDER}</p>
-        <p>目录存在: <span class="{'good' if upload_dir_exists else 'bad'}">{upload_dir_exists}</span></p>
-        <p>目录可写: <span class="{'good' if upload_dir_writable else 'bad'}">{upload_dir_writable}</span></p>
-        <p>最大上传大小: {app.config['MAX_CONTENT_LENGTH']/1024/1024}MB</p>
-        
-        <div class="form-container">
-            <h2>测试上传</h2>
-            <form action="{url_for('upload_image')}" method="post" enctype="multipart/form-data">
-                <p>选择一张图片 (最大 {4 if IS_VERCEL else 16}MB):</p>
-                <input type="file" name="image" accept="image/*"><br><br>
-                <input type="submit" value="上传图片">
-            </form>
-        </div>
-        
-        <h2>现有图片 ({len(images)}个)</h2>
-        <table>
-            <tr>
-                <th>文件名</th>
-                <th>大小</th>
-                <th>权限</th>
-                <th>可读</th>
-                <th>可写</th>
-            </tr>
-            {''.join(f'<tr><td>{img["name"]}</td><td>{img["size"]}</td><td>{img["mode"]}</td><td>{img["readable"]}</td><td>{img["writable"]}</td></tr>' for img in images)}
-        </table>
-        
-        <p><a href="{url_for('gallery')}">返回相册</a></p>
-    </body>
-    </html>
-    """
-    return html
-
 # 在文件末尾添加一个测试路由，用于检查MongoDB连接状态
+
 @app.route('/test_db')
 def test_db():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    
+        
     result = {
-        'status': '连接成功' if mongo_client else '未连接',
-        'database': DB_NAME,
-        'collection': COLLECTION_NAME
+        'is_vercel': IS_VERCEL,
+        'mongodb_uri_set': bool(MONGODB_URI),
+        'mongo_client': bool(mongo_client),
+        'connection_status': 'Unknown'
     }
     
-    if mongo_client:
-        try:
-            # 尝试执行一个简单的操作确认连接
-            mongo_client.server_info()
-            result['ping'] = '成功'
-        except Exception as e:
-            result['ping'] = f'失败: {str(e)}'
-    
-    return result
+    try:
+        if mongo_client:
+            # 尝试ping数据库服务器
+            mongo_client.admin.command('ping')
+            result['connection_status'] = 'Connected'
+            
+            # 尝试列出所有日志条目
+            entries = list(collection.find({}, {'_id': 0}))
+            result['entries_count'] = len(entries)
+            result['entries'] = entries
+            
+            return f"<pre>{json.dumps(result, indent=2, ensure_ascii=False)}</pre>"
+        else:
+            result['connection_status'] = 'Not Connected'
+            return f"<pre>{json.dumps(result, indent=2)}</pre>"
+    except Exception as e:
+        result['connection_status'] = f'Error: {str(e)}'
+        return f"<pre>{json.dumps(result, indent=2)}</pre>"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080, debug=True)
