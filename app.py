@@ -143,18 +143,26 @@ def save_journal(entries):
     try:
         # 如果 MongoDB 可用，保存到数据库
         if mongo_client:
-            # 使用更安全的方法：对于每个条目，使用upsert操作
-            # 这样如果操作失败，不会丢失所有数据
-            for entry in entries:
-                # 使用id作为唯一标识
-                query = {'id': entry['id']}
-                # 使用upsert=True，存在则更新，不存在则插入
-                collection.update_one(query, {'$set': entry}, upsert=True)
+            # 检查MongoDB连接是否有效
+            try:
+                # 尝试Ping MongoDB服务器
+                mongo_client.admin.command('ping')
                 
-            app.logger.info(f"成功保存/更新 {len(entries)} 条日志到MongoDB")
-            return True
+                # 使用更安全的方法：对于每个条目，使用upsert操作
+                # 这样如果操作失败，不会丢失所有数据
+                for entry in entries:
+                    # 使用id作为唯一标识
+                    query = {'id': entry['id']}
+                    # 使用upsert=True，存在则更新，不存在则插入
+                    collection.update_one(query, {'$set': entry}, upsert=True)
+                    
+                app.logger.info(f"成功保存/更新 {len(entries)} 条日志到MongoDB")
+                return True
+            except Exception as e:
+                app.logger.error(f"MongoDB连接或操作失败: {e}")
+                # 如果MongoDB操作失败，回退到文件存储
         
-        # 否则保存到本地文件
+        # MongoDB不可用或操作失败，保存到本地文件
         dir_path = os.path.dirname(JOURNAL_FILE)
         if dir_path and not os.path.exists(dir_path):
             os.makedirs(dir_path, exist_ok=True)
@@ -187,7 +195,7 @@ def get_next_milestone(start_date, today):
     # Calculate the date of the next 100-day milestone
     next_milestone = start_date + timedelta(days=(hundreds_passed + 1) * 100)
     
-    # Calculate days until the next milestone
+    # Calculate days to milestone
     days_to_milestone = (next_milestone - today).days
     
     # Format milestone text
@@ -302,6 +310,9 @@ def add_entry():
         # 如果MongoDB可用，尝试添加
         if mongo_client:
             try:
+                # 检查连接是否有效
+                mongo_client.admin.command('ping')
+                
                 # 直接插入
                 result = collection.insert_one(entry)
                 if result.inserted_id:
@@ -315,13 +326,16 @@ def add_entry():
         
         # 如果MongoDB不可用或添加失败，使用文件存储
         if not success:
-            entries = load_journal()
-            entries.append(entry)
-            success = save_journal(entries)
-            if success:
-                app.logger.info(f"日志已添加到文件存储: {entry_id}")
-            else:
-                app.logger.error(f"文件存储保存日志失败: {entry_id}")
+            try:
+                entries = load_journal()
+                entries.append(entry)
+                success = save_journal(entries)
+                if success:
+                    app.logger.info(f"日志已添加到文件存储: {entry_id}")
+                else:
+                    app.logger.error(f"文件存储保存日志失败: {entry_id}")
+            except Exception as file_err:
+                app.logger.error(f"文件存储操作失败: {file_err}")
         
         if success:
             flash('日志添加成功')
@@ -567,6 +581,39 @@ def api_status():
 
 # Application instance for Vercel
 application = app
+
+# 在文件末尾添加一个测试路由，用于检查MongoDB连接状态
+
+@app.route('/test_db')
+def test_db():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+        
+    result = {
+        'is_vercel': IS_VERCEL,
+        'mongodb_uri_set': bool(MONGODB_URI),
+        'mongo_client': bool(mongo_client),
+        'connection_status': 'Unknown'
+    }
+    
+    try:
+        if mongo_client:
+            # 尝试ping数据库服务器
+            mongo_client.admin.command('ping')
+            result['connection_status'] = 'Connected'
+            
+            # 尝试列出所有日志条目
+            entries = list(collection.find({}, {'_id': 0}))
+            result['entries_count'] = len(entries)
+            result['entries'] = entries
+            
+            return f"<pre>{json.dumps(result, indent=2, ensure_ascii=False)}</pre>"
+        else:
+            result['connection_status'] = 'Not Connected'
+            return f"<pre>{json.dumps(result, indent=2)}</pre>"
+    except Exception as e:
+        result['connection_status'] = f'Error: {str(e)}'
+        return f"<pre>{json.dumps(result, indent=2)}</pre>"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
