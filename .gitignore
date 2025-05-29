@@ -1,6 +1,10 @@
 # Environment variables
 .env
 
+# Firebase credentials
+firebase-key.json
+firebase-key*.json
+
 # Python
 __pycache__/
 *.py[cod]
