@@ -14,7 +14,7 @@ load_dotenv()
 
 # Import utility functions
 from utils.db import init_mongodb_connection
-from utils.image_utils import init_firebase_storage
+from utils.gridfs_utils import init_gridfs_storage
 from config import SECRET_KEY, LOG_DIR
 
 # Create Flask application
@@ -73,8 +73,11 @@ with app.app_context():
     # Initialize MongoDB connection
     init_mongodb_connection()
     
-    # Initialize Firebase Storage
-    init_firebase_storage()
+    # Initialize GridFS Storage if enabled
+    from config import USE_GRIDFS_STORAGE
+    if USE_GRIDFS_STORAGE:
+        from utils.gridfs_utils import init_gridfs_storage
+        init_gridfs_storage()
 
 # Register routes with the application
 register_routes_with_app()

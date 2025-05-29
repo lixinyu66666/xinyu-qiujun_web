@@ -43,12 +43,12 @@
                 <div class="slider-container">
                     {% for image in images %}
                     <div class="slide">
-                        <div class="img-container" data-image="{{ url_for('static', filename='images/' + image) }}">
-                            <img src="{{ url_for('static', filename='images/' + image) }}" alt="我们的照片">
+                        <div class="img-container" data-image="{{ image.url }}">
+                            <img src="{{ image.url }}" alt="我们的照片">
                             <div class="hover-overlay">
                                 <i class="fas fa-expand-arrows-alt"></i>
                                 <form action="{{ url_for('gallery.delete') }}" method="post" class="delete-form">
-                                    <input type="hidden" name="image" value="{{ image }}">
+                                    <input type="hidden" name="image" value="{{ image.id }}">
                                     <button type="submit" class="delete-btn" onclick="return confirm('确定要删除这张照片吗？')">
                                         <i class="fas fa-trash"></i>
                                     </button>

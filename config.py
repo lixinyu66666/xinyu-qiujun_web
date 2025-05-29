@@ -51,7 +51,6 @@ else:
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'JPG', 'JPEG', 'PNG', 'GIF'}
 
-# Firebase Storage Configuration
-USE_FIREBASE_STORAGE = os.getenv('USE_FIREBASE_STORAGE', 'true').lower() == 'true'
-FIREBASE_BUCKET = os.getenv('FIREBASE_BUCKET')
-FIREBASE_KEY_PATH = os.path.join(BASE_DIR, 'firebase-key.json')
+# Storage Configuration
+USE_GRIDFS_STORAGE = os.getenv('USE_GRIDFS_STORAGE', 'true').lower() == 'true'
+GRIDFS_COLLECTION = 'images'

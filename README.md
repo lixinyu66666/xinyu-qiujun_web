@@ -1,6 +1,6 @@
 # Xinyu & Qiujun - Love Anniversary Website
 
-A Flask-based personal love anniversary website to record beautiful moments together. Updated on May 29, 2025.
+A Flask-based personal love anniversary website to record beautiful moments together. Updated on May 30, 2025.
 
 ## Features
 
@@ -8,9 +8,10 @@ A Flask-based personal love anniversary website to record beautiful moments toge
 * 100-day milestone celebrations
 * Beautiful photo gallery with fullscreen view
 * Journal system to record memories with MongoDB
-* Photo storage with Firebase Storage
+* Photo storage with MongoDB GridFS or Local Storage
 * Password protection
 * Modular codebase structure
+* Vercel deployment support
 
 ## Important Note: Vercel Deployment Issue Workaround
 
@@ -18,7 +19,7 @@ A Flask-based personal love anniversary website to record beautiful moments toge
 
 Vercel is a **stateless service platform** that does not allow server-side persistent file writes. When you try to add logs, the server attempts to write to the `journal.json` file, which is not permitted in the Vercel environment, resulting in a 500 Internal Server Error.
 
-### Solution 1: Use MongoDB Database
+### Solution 1: Use MongoDB Database for Journal Entries
 
 The application has been updated to support MongoDB. You can set it up as follows:
 
@@ -31,19 +32,18 @@ The application has been updated to support MongoDB. You can set it up as follow
    mongodb+srv://username:password@cluster.mongodb.net/mydb?retryWrites=true&w=majority
    ```
    
-### Solution 2: Use Firebase Storage for Images
+### Solution 2: Use MongoDB GridFS for Image Storage
 
-The application now supports Firebase Storage for image uploads:
+The application now uses MongoDB GridFS for image storage, replacing Firebase Storage. This approach is:
 
-1. Go to [Firebase Console](https://console.firebase.google.com/) and create a new project.
-2. In the Firebase console, go to "Storage" and set up Cloud Storage.
-3. Go to Project Settings > Service Accounts.
-4. Click "Generate New Private Key" to download your service account credentials.
-5. Rename the downloaded file to `firebase-key.json` and place it in the root directory of the project.
-6. Update your `.env` file with the following variables:
+1. Free to use with your MongoDB Atlas account
+2. Integrated with the existing MongoDB database
+3. Efficient for storing and retrieving binary data like images
+4. Compatible with Vercel's stateless deployment model
+
+To enable GridFS storage, update your `.env` file with:
    ```
-   USE_FIREBASE_STORAGE=true
-   FIREBASE_BUCKET=your-project-id.appspot.com
+   USE_GRIDFS_STORAGE=true
    ```
 
 ## Deploying to Vercel
@@ -61,6 +61,7 @@ In your Vercel project settings, add the following environment variables:
 * `SECRET_KEY`: Flask session secret key.
 * `MONGODB_URI`: MongoDB Atlas connection string.
 * `MONGODB_DB`: Database name (e.g., `journal_db`).
+* `USE_GRIDFS_STORAGE`: Set to `true` to use MongoDB GridFS for image storage.
 * `VERCEL`: Set to `1`.
 
 ## Local Development
@@ -70,9 +71,11 @@ In your Vercel project settings, add the following environment variables:
    ```
    SECRET_KEY=your_random_secret_key
    PASSWORD=your_password
-   # Optional: if using MongoDB locally
-   # MONGODB_URI=your_mongodb_connection_string
-   # MONGODB_DB=journal_db
+   # MongoDB configuration
+   MONGODB_URI=your_mongodb_connection_string
+   MONGODB_DB=journal_db
+   # Storage configuration
+   USE_GRIDFS_STORAGE=true
    ```
 3. Run: `python app.py`
 4. Open [http://localhost:8080](http://localhost:8080/) in your browser.

@@ -49,8 +49,23 @@ def init_mongodb_connection():
         collections = {}
         return False
 
+def get_db():
+    """Get MongoDB database instance
+    
+    Returns:
+        Database: MongoDB database instance or None if not connected
+    """
+    global db
+    if db is None:
+        init_mongodb_connection()
+    return db
+
 def is_connected():
-    """Check if MongoDB is connected"""
+    """Check if MongoDB is connected
+    
+    Returns:
+        bool: True if connected, False otherwise
+    """
     global mongo_client
     if not mongo_client:
         return False

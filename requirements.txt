@@ -3,4 +3,4 @@ python-dotenv>=1.0.0
 Werkzeug>=2.2.3
 pymongo[srv]>=4.0.0
 pytz>=2023.3
-firebase-admin>=6.0.0 
+# Note: gridfs and bson are part of pymongo package 
