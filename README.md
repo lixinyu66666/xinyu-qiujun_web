@@ -1,14 +1,16 @@
 # Xinyu & Qiujun - Love Anniversary Website
 
-A Flask-based personal love anniversary website to record beautiful moments together. Updated on May 28, 2025.
+A Flask-based personal love anniversary website to record beautiful moments together. Updated on May 29, 2025.
 
 ## Features
 
 * Track days since the beginning (December 10, 2022)
 * 100-day milestone celebrations
 * Beautiful photo gallery with fullscreen view
-* Journal system to record memories
+* Journal system to record memories with MongoDB
+* Photo storage with Firebase Storage
 * Password protection
+* Modular codebase structure
 
 ## Important Note: Vercel Deployment Issue Workaround
 
@@ -16,7 +18,7 @@ A Flask-based personal love anniversary website to record beautiful moments toge
 
 Vercel is a **stateless service platform** that does not allow server-side persistent file writes. When you try to add logs, the server attempts to write to the `journal.json` file, which is not permitted in the Vercel environment, resulting in a 500 Internal Server Error.
 
-### Solution: Use MongoDB Database
+### Solution 1: Use MongoDB Database
 
 The application has been updated to support MongoDB. You can set it up as follows:
 
@@ -27,6 +29,21 @@ The application has been updated to support MongoDB. You can set it up as follow
 5. Obtain the connection string, formatted like:
    ```
    mongodb+srv://username:password@cluster.mongodb.net/mydb?retryWrites=true&w=majority
+   ```
+   
+### Solution 2: Use Firebase Storage for Images
+
+The application now supports Firebase Storage for image uploads:
+
+1. Go to [Firebase Console](https://console.firebase.google.com/) and create a new project.
+2. In the Firebase console, go to "Storage" and set up Cloud Storage.
+3. Go to Project Settings > Service Accounts.
+4. Click "Generate New Private Key" to download your service account credentials.
+5. Rename the downloaded file to `firebase-key.json` and place it in the root directory of the project.
+6. Update your `.env` file with the following variables:
+   ```
+   USE_FIREBASE_STORAGE=true
+   FIREBASE_BUCKET=your-project-id.appspot.com
    ```
 
 ## Deploying to Vercel

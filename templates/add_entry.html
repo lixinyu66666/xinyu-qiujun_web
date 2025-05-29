@@ -14,8 +14,8 @@
         <header>
             <h1>添加新日志</h1>
             <div class="nav-buttons">
-                <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> 返回主页</a>
-                <a href="{{ url_for('journal') }}" class="nav-btn"><i class="fas fa-book"></i> 返回日志</a>
+                <a href="{{ url_for('main.home') }}" class="nav-btn"><i class="fas fa-home"></i> 返回主页</a>
+                <a href="{{ url_for('journal.journal_list') }}" class="nav-btn"><i class="fas fa-book"></i> 返回日志</a>
             </div>
         </header>
         
@@ -30,7 +30,7 @@
         {% endwith %}
 
         <div class="journal-form">
-            <form action="{{ url_for('add_entry') }}" method="post">
+            <form action="{{ url_for('journal.add_entry') }}" method="post">
                 <div class="form-group">
                     <label for="title">标题</label>
                     <input type="text" id="title" name="title" required>
@@ -48,7 +48,7 @@
                 
                 <div class="form-buttons">
                     <button type="submit" class="btn"><i class="fas fa-save"></i> 保存</button>
-                    <a href="{{ url_for('journal') }}" class="btn btn-cancel"><i class="fas fa-times"></i> 取消</a>
+                    <a href="{{ url_for('journal.journal_list') }}" class="btn btn-cancel"><i class="fas fa-times"></i> 取消</a>
                 </div>
             </form>
         </div>

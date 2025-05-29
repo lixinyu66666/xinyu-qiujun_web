@@ -14,11 +14,11 @@
         <header>
             <h1>我们的照片</h1>
             <div class="nav-buttons">
-                <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> 返回主页</a>
-                <a href="{{ url_for('journal') }}" class="nav-btn"><i class="fas fa-book"></i> 日志</a>
+                <a href="{{ url_for('main.home') }}" class="nav-btn"><i class="fas fa-home"></i> 返回主页</a>
+                <a href="{{ url_for('journal.journal_list') }}" class="nav-btn"><i class="fas fa-book"></i> 日志</a>
             </div>
             <div class="nav-buttons" style="margin-top: 10px;">
-                <form action="{{ url_for('upload_image') }}" method="post" enctype="multipart/form-data" style="display: inline;">
+                <form action="{{ url_for('gallery.upload') }}" method="post" enctype="multipart/form-data" style="display: inline;">
                     <label class="nav-btn" style="cursor: pointer;">
                         <i class="fas fa-upload"></i> 上传新照片
                         <input type="file" name="image" accept="image/*" style="display: none;" onchange="this.form.submit()">
@@ -47,7 +47,7 @@
                             <img src="{{ url_for('static', filename='images/' + image) }}" alt="我们的照片">
                             <div class="hover-overlay">
                                 <i class="fas fa-expand-arrows-alt"></i>
-                                <form action="{{ url_for('delete_image') }}" method="post" class="delete-form">
+                                <form action="{{ url_for('gallery.delete') }}" method="post" class="delete-form">
                                     <input type="hidden" name="image" value="{{ image }}">
                                     <button type="submit" class="delete-btn" onclick="return confirm('确定要删除这张照片吗？')">
                                         <i class="fas fa-trash"></i>

@@ -65,7 +65,7 @@
 <body>
     <div class="login-container">
         <h2>欢迎来到我们的爱情空间</h2>
-        <form method="POST" action="{{ url_for('login') }}">
+        <form method="POST" action="{{ url_for('auth.login') }}">
             <input type="password" name="password" placeholder="请输入密码" required>
             <br>
             <button type="submit">进入</button>

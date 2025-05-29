@@ -14,8 +14,8 @@
         <header>
             <h1>{{ entry.title }}</h1>
             <div class="nav-buttons">
-                <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> 返回主页</a>
-                <a href="{{ url_for('journal') }}" class="nav-btn"><i class="fas fa-book"></i> 返回日志</a>
+                <a href="{{ url_for('main.home') }}" class="nav-btn"><i class="fas fa-home"></i> 返回主页</a>
+                <a href="{{ url_for('journal.journal_list') }}" class="nav-btn"><i class="fas fa-book"></i> 返回日志</a>
             </div>
         </header>
         
@@ -42,10 +42,10 @@
             
             <div class="entry-actions">
                 <div class="nav-buttons">
-                    <a href="{{ url_for('edit', id=entry.id) }}" class="nav-btn"><i class="fas fa-edit"></i> 编辑</a>
+                    <a href="{{ url_for('journal.edit', id=entry.id) }}" class="nav-btn"><i class="fas fa-edit"></i> 编辑</a>
                     <button onclick="if(confirm('确定要删除这篇日志吗？')) document.getElementById('delete-form').submit();" class="nav-btn"><i class="fas fa-trash"></i> 删除</button>
                 </div>
-                <form id="delete-form" action="{{ url_for('delete_entry') }}" method="post" style="display: none;">
+                <form id="delete-form" action="{{ url_for('journal.delete') }}" method="post" style="display: none;">
                     <input type="hidden" name="entry_id" value="{{ entry.id }}">
                 </form>
             </div>
