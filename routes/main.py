@@ -16,6 +16,7 @@ main_bp = Blueprint('main', __name__)
 def home():
     """Display the home page with relationship statistics"""
     if not session.get('logged_in'):
+        
         return redirect(url_for('auth.login'))
     
     # Get current time in China timezone
